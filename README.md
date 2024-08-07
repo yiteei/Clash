@@ -1,1 +1,1 @@
-# Clash
+# rm -rf /*
