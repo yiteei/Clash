@@ -17,7 +17,7 @@ profile: # 缓存
   store-selected: true # 储存 API 对策略组的选择, 以供下次启动时使用
 ipv6: true # IPv6 是否允许内核接受 IPv6 流量
 tcp-concurrent: true # TCP 并发 如果域名解析结果对应多个IP, 并发请求所有IP, 选择握手最快的IP进行通讯
-keep-alive-interval: 15 # 控制 Clash 发出 TCP Keep Alive 包的间隔, 单位 s, 减少移动设备耗电问题的临时措施
+keep-alive-interval: 20 # 控制 Clash 发出 TCP Keep Alive 包的间隔, 单位 s, 减少移动设备耗电问题的临时措施
 unified-delay: true # 统一延迟, 会计算 RTT, 以消除连接握手等带来的不同类型节点的延迟差异
 global-client-fingerprint: "chrome" # 全局客户端指纹 chrome/firefox/safari/iOS/android/edge/360/qq/random, 优先低于 proxy 内的 client-fingerprint, 目前支持开启 TLS 传输的 TCP/grpc/WS/HTTP, 支持协议有 VLESS/Vmess/Trojan
 global-ua: "Mozilla" # 全局 UA, 默认 clash.meta
@@ -89,7 +89,7 @@ sniffer: # Sniffer 域名嗅器 通过读取握手包内的域名字段, 将 IP 
   override-destination: true # 是否使用嗅探结果作为实际访问, 默认  true
   sniff: # TLS 和 QUIC 默认如果不配置 ports 默认嗅探 443
     HTTP: # 默认嗅探 80
-      ports: [80, 8080-8880]
+      ports: [80, 443, 8080-8880]
     TLS:
       ports: [443, 8443]
     QUIC:
@@ -104,7 +104,7 @@ sniffer: # Sniffer 域名嗅器 通过读取握手包内的域名字段, 将 IP 
     - "*.rc.sunlogin.net"
 
 
-ntp: # NTP 服务器配置 如果使用 Vmess 协议, 客户端的时间和 VPS 的时间误差超 90s, 就会导致不能正常使用
+ntp: # NTP 服务器配置 如果使用 Vmess 协议, 客户端和 VPS 的时间误差超 90s, 就会导致不能正常使用(和时区无关)
   enable: false # 是否启用 NTP 服务
   write-to-system: true # 是否同步至系统时间, 需要 root/管理员模式 运行
   server: "ntp.ntsc.ac.cn" # NTP 服务地址
@@ -112,7 +112,7 @@ ntp: # NTP 服务器配置 如果使用 Vmess 协议, 客户端的时间和 VPS 
   interval: 1440 # 同步时间间隔, 单位 min, 默认 30 min
 
 proxies: # 出站配置 查看接口命令: netsh interface show interface  Tip: 手机需要 root 跑内核 以绑定接口
-  - {name: "DNS 劫持", type: dns, udp: true} # dns 出站会将请求劫持到内部 dns 模块, 所有请求均在内部处理
+  - {name: "dns-hijacking", type: dns, udp: true} # dns 出站会将请求劫持到内部 dns 模块, 所有请求均在内部处理
   - {name: "自动直连", type: direct, udp: true}
   - {name: "以太网", type: direct, udp: true, interface-name: 以太网} # Windows 网线
   - {name: "WLAN", type: direct, udp: true, interface-name: WLAN} # Windows WiFi
@@ -123,8 +123,8 @@ proxies: # 出站配置 查看接口命令: netsh interface show interface  Tip:
   - {name: "rmnet_data2", type: direct, udp: true, interface-name: rmnet_data2}
   - {name: "rmnet_data3", type: direct, udp: true, interface-name: rmnet_data3}
 
-proxy-providers-anchor: # 锚点 如合并时有重复的项, 则不会去合并
-  - proxy_providers_header: &proxy_providers_header
+proxy-providers-anchor: # 锚点 如合并时有重复的项, 则不会去合并; 锚点名不能包含特殊字符
+  - header: &header
       User-Agent:
         - "clash.meta"
         - "meta"
@@ -136,45 +136,46 @@ proxy-providers-anchor: # 锚点 如合并时有重复的项, 则不会去合并
         - "ClashforWindows"
         - "ClashForAndroid"
         - "clash"
-  - proxy_providers_health_check: &proxy_providers_health_check
+  - filter_exclude: &filter_exclude '^(?=.*(.))(?!.*((?i)群|邀请|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|无法|说明|使用|提示|特别|访问|支持|教程|关注|更新|作者|加入|(\b(USE|USED|TOTAL|EXPIRE|EMAIL|Panel|Channel|Author)\b|(\d{4}-\d{2}-\d{2}|\d+G)))).*$'
+  - health_check: &health_check
       url: "https://www.google.com" # 使⽤ https, 防⽌⽆良⽼板伪造延迟!
       interval: "180" # 测试间隔, 不为 0 则启用定时测试, 单位 s
       timeout: "3000" # 健康检查超时时间, 单位为 ms
       expected-status: "204" # 期望状态, 只有当响应状态码与期望状态一致时才认为节点可用
-  - proxy_providers_override: &proxy_providers_override
+  - override: &override
       skip-cert-verify: false # 跳过证书验证, 仅适用于使用 tls 的协议
       ip-version: "ipv6-prefer" # 设置节点使用 IP 版本, 默认 dual; dual/ipv4/ipv6/ipv4-prefer/ipv6-prefer ipv4-prefer/ipv6-prefer 为双栈解析
 
 proxy-providers: # 支持直接使用 V2rayN 等客户端的普通订阅; 一个合法的远程代理集必须包含 proxies 字段, 远程代理集为空时会以 DIRECT 替代
-  "Subscription_1": # 订阅名称
+  "Subscription_1": # 代理集合¹ 优选订阅 //订阅名称
     type: http # 必须, provider 类型 http/file
     url: "https://" # 你的订阅链接
     path: "./proxy_providers/Subscription_1.yaml" # 配置保存位置
-    interval: 86400 # 更新 provider 的时间, 单位 s
+    interval: 86400 # 更新 provider 的时间, 单位 s  Tip: 设置的过于小可能被机场 ban
     header:
-      <<: *proxy_providers_header # 引用相关锚点
-    exclude-filter: "(?i)(?:通知|公告|官网|地址|域名|邀|佣|com|tg|前往|加入|群|频道|流量|剩|期|续)" # 排除, 使用筛选可能会在一定程度上增加CPU占用/转发延迟, 尤其是使用较为复杂正则的情况下
+      <<: *header # 引用相关锚点
+    filter: *filter_exclude # 排除, 使用筛选可能会在一定程度上增加CPU占用/转发延迟, 尤其是使用较为复杂正则的情况下
     health-check: # 代理集延迟检测
       enable: true # 是否启用
-      <<: *proxy_providers_health_check
+      <<: *health_check
     override: # 覆写节点内容
-      <<: *proxy_providers_override
-      additional-suffix: "@订阅1" # 为节点名称添加固定前缀
+      <<: *override
+      additional-suffix: "@Moist_R" # 为节点名称添加固定前缀
 
-  "Subscription_2": # 订阅名称
+  "Subscription_2": # CM 优选订阅
     type: http
     url: "https://"
     path: "./proxy_providers/Subscription_2.yaml"
     interval: 86400
     header:
-      <<: *proxy_providers_header
-    exclude-filter: "(?i)(?:通知|公告|官网|地址|域名|邀|佣|com|tg|前往|加入|群|频道|流量|剩|期|续)"
+      <<: *header
+    filter: *filter_exclude
     health-check:
       enable: true
-      <<: *proxy_providers_health_check
+      <<: *health_check
     override:
-      <<: *proxy_providers_override
-      additional-suffix: "@订阅2"
+      <<: *override
+      additional-suffix: "@CMLiussss"
 
   "Subscription_3": # 小鸡快跑 aff: https://v2.xiaojikp.cc/#/register?invitecode=z1RKg6KW
     type: http
@@ -182,14 +183,14 @@ proxy-providers: # 支持直接使用 V2rayN 等客户端的普通订阅; 一个
     path: "./proxy_providers/Subscription_3.yaml"
     interval: 86400
     header:
-      <<: *proxy_providers_header
-    exclude-filter: "(?i)(?:通知|公告|官网|地址|域名|邀|佣|com|tg|前往|加入|群|频道|流量|剩|期|续)"
+      <<: *header
+    filter: *filter_exclude
     health-check:
       enable: true
-      <<: *proxy_providers_health_check
+      <<: *health_check
     override:
-      <<: *proxy_providers_override
-      additional-suffix: "@Chicken Run"
+      <<: *override
+      additional-suffix: "@小鸡快跑"
 
   "Subscription_4": # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http
@@ -197,113 +198,118 @@ proxy-providers: # 支持直接使用 V2rayN 等客户端的普通订阅; 一个
     path: "./proxy_providers/Subscription_4.yaml"
     interval: 86400
     header:
-      <<: *proxy_providers_header
-    exclude-filter: "(?i)(?:通知|公告|官网|地址|域名|邀|佣|com|tg|前往|加入|群|频道|流量|剩|期|续)"
+      <<: *header
+    filter: *filter_exclude
     health-check:
       enable: true
-      <<: *proxy_providers_health_check
+      <<: *health_check
     override:
-      <<: *proxy_providers_override
+      <<: *override
       additional-suffix: "@Free Cloud"
  
 
-proxy-groups-anchor: # 锚点 如合并时有重复的项, 则不会去合并
-  - proxy_groups_health_check_proxy: &proxy_groups_health_check_proxy {url: "https://www.google.com", expected-status: "204", interval: "180", timeout: "3000", max-failed-times: 1} # 策略组 proxy 延迟检测
-  - proxy_groups_health_check_direct: &proxy_groups_health_check_direct {url: "https://www.tencent.com", expected-status: "204", interval: "180", timeout: "3000", max-failed-times: 1} # 策略组 direct 延迟检测
-  - proxy_groups_proxy: &proxy_groups_proxy {type: select, proxies: [Internet, 协议互联, Moist_R, CMLiussss, Chicken Run, Free Cloud, 直连策略]}
-  - proxy_groups_direct: &proxy_groups_direct {type: select, proxies: [直连策略, Moist_R, CMLiussss, Chicken Run, Free Cloud, 协议互联, Internet]}
+proxy-groups-anchor: # 锚点 如合并时有重复的项, 则不会去合并; 锚点名不能包含特殊字符
+  - filter_HK: &filter_HK {filter: '^(?=.*((?i)🇭🇰|香港|(\b(HK|Hong)\b)))(?!.*((?i)回国|校园)).*$'}
+  - filter_JP: &filter_JP {filter: '^(?=.*((?i)🇯🇵|日本|川日|东京|大阪|泉日|埼玉|(\b(JP|Japan)\b)))(?!.*((?i)回国|校园)).*$'}
+  - filter_SG: &filter_SG {filter: '^(?=.*((?i)🇸🇬|新加坡|狮|(\b(SG|Singapore)\b)))(?!.*((?i)回国|校园)).*$'}
+  - filter_US: &filter_US {filter: '^(?=.*((?i)🇺🇸|美国|波特兰|达拉斯|俄勒冈|凤凰城|费利蒙|硅谷|拉斯维加斯|洛杉矶|圣何塞|圣克拉拉|西雅图|芝加哥|(\b(US|United States)\b)))(?!.*((?i)回国|校园)).*$'}
+  - filter_Back: &filter_Back {filter: '^(?!.*((?i)回国|校园)).*$'} # 排除回国
 
-proxy-groups: # 策略组可以包含多个代理, 或者多个远程代理集; 不包含任何代理的策略组, 会被当作为 DIRECT 策略处理
-  - {name: "Internet", type: select, proxies: [协议互联, 直连策略]}
-  - {name: "协议互联", type: select, proxies: [自动切换, 故障排除, 负载哈希, 负载轮询, 美国哈希, 美国轮询, 日本哈希, 日本轮询, 狮城哈希, 狮城轮询, 香港哈希, 香港轮询, 订阅1, 订阅2, Chicken Run, Free Cloud]}
-  - {name: "自动切换", <<: *proxy_groups_health_check_proxy, type: url-test, tolerance: 5, include-all-providers: true, exclude-filter: "(?:CN|中国|国内)", hidden: true}
-  - {name: "故障排除", <<: *proxy_groups_health_check_proxy, type: fallback, include-all-providers: true, hidden: true}
-  - {name: "负载哈希", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, include-all-providers: true, hidden: true}
-  - {name: "负载轮询", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, include-all-providers: true, hidden: true}
+  - url_test1: &url_test1 {type: url-test, url: "https://www.google.com", expected-status: "204", interval: "180", timeout: "2000", max-failed-times: 3, tolerance: 5, lazy: true}
+  - url_test2: &url_test2 {type: url-test, url: "https://www.tencent.com", expected-status: "204", interval: "180", timeout: "2000", max-failed-times: 3, tolerance: 5, lazy: true}
 
-  - {name: "直连策略", type: select, proxies: [自动直连, 以太网 + WLAN, wlan0 + wlan1, data0 + wlan0, data0 + wlan1, data1 + wlan0, data1 + wlan1, data2 + wlan0, data2 + wlan1, data3 + wlan0, data3 + wlan1, 协议互联]}
-  - {name: "以太网 + WLAN", <<: *proxy_groups_health_check_direct, type: load-balance, strategy: round-robin, proxies: [以太网, WLAN], hidden: true}
-  - {name: "wlan0 + wlan1", <<: *proxy_groups_health_check_direct, type: load-balance, strategy: round-robin, proxies: [wlan0, wlan1], hidden: true}
-  - {name: "data0 + wlan0", <<: *proxy_groups_health_check_direct, type: load-balance, strategy: round-robin, proxies: [rmnet_data0, wlan0], hidden: true}
-  - {name: "data0 + wlan1", <<: *proxy_groups_health_check_direct, type: load-balance, strategy: round-robin, proxies: [rmnet_data0, wlan1], hidden: true}
-  - {name: "data1 + wlan0", <<: *proxy_groups_health_check_direct, type: load-balance, strategy: round-robin, proxies: [rmnet_data1, wlan0], hidden: true}
-  - {name: "data1 + wlan1", <<: *proxy_groups_health_check_direct, type: load-balance, strategy: round-robin, proxies: [rmnet_data1, wlan1], hidden: true}
-  - {name: "data2 + wlan0", <<: *proxy_groups_health_check_direct, type: load-balance, strategy: round-robin, proxies: [rmnet_data2, wlan0], hidden: true}
-  - {name: "data2 + wlan1", <<: *proxy_groups_health_check_direct, type: load-balance, strategy: round-robin, proxies: [rmnet_data2, wlan1], hidden: true}
-  - {name: "data3 + wlan0", <<: *proxy_groups_health_check_direct, type: load-balance, strategy: round-robin, proxies: [rmnet_data3, wlan0], hidden: true}
-  - {name: "data3 + wlan1", <<: *proxy_groups_health_check_direct, type: load-balance, strategy: round-robin, proxies: [rmnet_data3, wlan1], hidden: true}
+  - fallback1: &fallback1 {type: fallback, url: "https://www.google.com", expected-status: "204", interval: "180", timeout: "2000", max-failed-times: 3, tolerance: 5, lazy: true}
 
-  - {name: "游戏娱乐", <<: *proxy_groups_direct}
-  - {name: "奈飞影视", <<: *proxy_groups_proxy}
-  - {name: "种子传输", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, include-all-providers: true, filter: "(?i)(?:BT|PT|卢森堡)"}
-  - {name: "谷歌推送", type: select, proxies: [直连策略, 故障排除]}
-  - {name: "隐私泄露", type: select, proxies: [REJECT-DROP, Internet, PASS, 直连策略]}
-  - {name: "🅀🅄🄸🄲", type: select, proxies: [PASS, REJECT-DROP]}
+  - load_balance1: &load_balance1 {type: load-balance, strategy: round-robin, url: "https://www.google.com", expected-status: "204", interval: "180", timeout: "2000", max-failed-times: 3, tolerance: 5, lazy: true}
+  - load_balance2: &load_balance2 {type: load-balance, strategy: round-robin, url: "https://www.tencent.com", expected-status: "204", interval: "180", timeout: "2000", max-failed-times: 3, tolerance: 5, lazy: true}
 
-  - {name: "美国哈希", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, include-all-providers: true, filter: "(?i)(?:🇺🇸|🇺🇲|美|United States|UnitedStates|America)", hidden: true}
-  - {name: "美国轮询", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, include-all-providers: true, filter: "(?i)(?:🇺🇸|🇺🇲|美|United States|UnitedStates|America)", hidden: true}
-  - {name: "日本哈希", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, include-all-providers: true, filter: "(?i)(?:🇯🇵|日|东京|Japan|Nippon|Nihon)", hidden: true}
-  - {name: "日本轮询", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, include-all-providers: true, filter: "(?i)(?:🇯🇵|日|东京|Japan|Nippon|Nihon)", hidden: true}
-  - {name: "狮城哈希", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, include-all-providers: true, filter: "(?i)(?:🇸🇬|新加坡|狮城|Singapore|Singapura)", hidden: true}
-  - {name: "狮城轮询", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, include-all-providers: true, filter: "(?i)(?:🇸🇬|新加坡|狮城|Singapore|Singapura)", hidden: true}
-  - {name: "香港哈希", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, include-all-providers: true, filter: "(?i)(?:🇭🇰|港|Hong Kong|HongKong)", hidden: true}
-  - {name: "香港轮询", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, include-all-providers: true, filter: "(?i)(?:🇭🇰|港|Hong Kong|HongKong)", hidden: true}
+  - proxies1: &proxies1 {proxies: [协议互联, 直连策略, 代理集合¹, 代理集合², 代理集合³, 代理集合⁴]}
+  - proxies2: &proxies2 {proxies: [直连策略, 协议互联, 代理集合¹, 代理集合², 代理集合³, 代理集合⁴]}
 
-  - {name: "订阅1", type: select, proxies: [自动切换¹, 故障排除¹, 美国哈希¹, 美国轮询¹, 日本哈希¹, 日本轮询¹, 狮城哈希¹, 狮城轮询¹, 香港哈希¹, 香港轮询¹]}
-  - {name: "自动切换¹", <<: *proxy_groups_health_check_proxy, type: url-test, tolerance: 5, use: [Subscription_1], exclude-filter: "(?i)(?:CN|中国|国内)", hidden: true}
-  - {name: "故障排除¹", <<: *proxy_groups_health_check_proxy, type: fallback, use: [Subscription_1], hidden: true}
-  - {name: "美国哈希¹", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, use: [Subscription_1], filter: "(?i)(?:🇺🇸|🇺🇲|美|United States|UnitedStates|America)", hidden: true}
-  - {name: "美国轮询¹", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, use: [Subscription_1], filter: "(?i)(?:🇺🇸|🇺🇲|美|United States|UnitedStates|America)", hidden: true}
-  - {name: "日本哈希¹", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, use: [Subscription_1], filter: "(?i)(?:🇯🇵|日|东京|Japan|Nippon|Nihon)", hidden: true}
-  - {name: "日本轮询¹", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, use: [Subscription_1], filter: "(?i)(?:🇯🇵|日|东京|Japan|Nippon|Nihon)", hidden: true}
-  - {name: "狮城哈希¹", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, use: [Subscription_1], filter: "(?i)(?:🇸🇬|新加坡|狮城|Singapore|Singapura)", hidden: true}
-  - {name: "狮城轮询¹", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, use: [Subscription_1], filter: "(?i)(?:🇸🇬|新加坡|狮城|Singapore|Singapura)", hidden: true}
-  - {name: "香港哈希¹", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, use: [Subscription_1], filter: "(?i)(?:🇭🇰|港|Hong Kong|HongKong)", hidden: true}
-  - {name: "香港轮询¹", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, use: [Subscription_1], filter: "(?i)(?:🇭🇰|港|Hong Kong|HongKong)", hidden: true}
+proxy-groups: # 策略组可以包含多个代理, 或多个远程代理集; 不包含任何代理的策略组, 会被当作为 DIRECT 策略处理; 如策略组代理来自远程代理集时, 则使用该来源的 health-check
+  - {name: "协议互联", type: select, proxies: [自动切换, 故障排除, 负载轮询, 直连策略, 代理集合¹, 代理集合², 代理集合³, 代理集合⁴], icon: "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Final.png"}
+  - {name: "代理集合¹", type: select, proxies: [自动切换¹, 故障排除¹, 美国自动¹, 美国轮询¹, 日本自动¹, 日本轮询¹, 狮城自动¹, 狮城轮询¹, 香港自动¹, 香港轮询¹], icon: "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png"}
+  - {name: "代理集合²", type: select, proxies: [自动切换², 故障排除², 美国自动², 美国轮询², 日本自动², 日本轮询², 狮城自动², 狮城轮询², 香港自动², 香港轮询²], icon: "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png"}
+  - {name: "代理集合³", type: select, proxies: [自动切换³, 故障排除³, 美国自动³, 美国轮询³, 日本自动³, 日本轮询³, 狮城自动³, 狮城轮询³, 香港自动³, 香港轮询³], icon: "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png"}
+  - {name: "代理集合⁴", type: select, proxies: [自动切换⁴, 故障排除⁴, 美国自动⁴, 美国轮询⁴, 日本自动⁴, 日本轮询⁴, 狮城自动⁴, 狮城轮询⁴, 香港自动⁴, 香港轮询⁴], icon: "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png"}
+  - {name: "直连策略", type: select, proxies: [自动直连, 以太网 + WLAN, wlan0 + wlan1, data0 + wlan0, data0 + wlan1, data1 + wlan0, data1 + wlan1, data2 + wlan0, data2 + wlan1, data3 + wlan0, data3 + wlan1], icon: "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Direct.png"}
+  - {name: "游戏娱乐", type: select, <<: *proxies2, icon: "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Game.png"}
+  - {name: "奈飞影视", type: select, <<: *proxies1, icon: "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Netflix.png"}
+  - {name: "种子传输", type: select, proxies: [直连策略, 协议互联], include-all-providers: true, filter: "(?i)(?:BT|PT|卢森堡)", icon: "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Download.png"}
+  - {name: "谷歌推送", type: select, proxies: [直连策略, 故障排除], icon: "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Gmail.png"}
+  - {name: "隐私泄露", type: select, proxies: [拦截数据, 跳过规则, 协议互联, 直连策略], icon: "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Lock.png"}
+  - {name: "🅀🅄🄸🄲", type: select, proxies: [跳过规则, 拦截数据], icon: "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Reject.png"}
+  - {name: "Internet", type: select, proxies: [协议互联, 直连策略], icon: "https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Global.png"}
 
-  - {name: "订阅2", type: select, proxies: [自动切换², 故障排除², 美国哈希², 美国轮询², 日本哈希², 日本轮询², 狮城哈希², 狮城轮询², 香港哈希², 香港轮询²]}
-  - {name: "自动切换²", <<: *proxy_groups_health_check_proxy, type: url-test, tolerance: 5, use: [Subscription_2], exclude-filter: "(?i)(?:CN|中国|国内)", hidden: true}
-  - {name: "故障排除²", <<: *proxy_groups_health_check_proxy, type: fallback, use: [Subscription_2], hidden: true}
-  - {name: "美国哈希²", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, use: [Subscription_2], filter: "(?i)(?:🇺🇸|🇺🇲|美|United States|UnitedStates|America)", hidden: true}
-  - {name: "美国轮询²", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, use: [Subscription_2], filter: "(?i)(?:🇺🇸|🇺🇲|美|United States|UnitedStates|America)", hidden: true}
-  - {name: "日本哈希²", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, use: [Subscription_2], filter: "(?i)(?:🇯🇵|日|东京|Japan|Nippon|Nihon)", hidden: true}
-  - {name: "日本轮询²", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, use: [Subscription_2], filter: "(?i)(?:🇯🇵|日|东京|Japan|Nippon|Nihon)", hidden: true}
-  - {name: "狮城哈希²", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, use: [Subscription_2], filter: "(?i)(?:🇸🇬|新加坡|狮城|Singapore|Singapura)", hidden: true}
-  - {name: "狮城轮询²", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, use: [Subscription_2], filter: "(?i)(?:🇸🇬|新加坡|狮城|Singapore|Singapura)", hidden: true}
-  - {name: "香港哈希²", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, use: [Subscription_2], filter: "(?i)(?:🇭🇰|港|Hong Kong|HongKong)", hidden: true}
-  - {name: "香港轮询²", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, use: [Subscription_2], filter: "(?i)(?:🇭🇰|港|Hong Kong|HongKong)", hidden: true}
+  - {name: "自动切换¹", <<: [*url_test1, *filter_Back], use: [Subscription_1], hidden: true}
+  - {name: "故障排除¹", <<: [*fallback1, *filter_Back], use: [Subscription_1], hidden: true}
+  - {name: "美国自动¹", <<: [*url_test1, *filter_US], use: [Subscription_1], hidden: true}
+  - {name: "日本自动¹", <<: [*url_test1, *filter_JP], use: [Subscription_1], hidden: true}
+  - {name: "狮城自动¹", <<: [*url_test1, *filter_SG], use: [Subscription_1], hidden: true}
+  - {name: "香港自动¹", <<: [*url_test1, *filter_HK], use: [Subscription_1], hidden: true}
+  - {name: "美国轮询¹", <<: [*load_balance1, *filter_US], use: [Subscription_1], hidden: true}
+  - {name: "日本轮询¹", <<: [*load_balance1, *filter_JP], use: [Subscription_1], hidden: true}
+  - {name: "狮城轮询¹", <<: [*load_balance1, *filter_SG], use: [Subscription_1], hidden: true}
+  - {name: "香港轮询¹", <<: [*load_balance1, *filter_HK], use: [Subscription_1], hidden: true}
 
-  - {name: "Chicken Run", type: select, proxies: [自动切换³, 故障排除³, 美国哈希³, 美国轮询³, 日本哈希³, 日本轮询³, 狮城哈希³, 狮城轮询³, 香港哈希³, 香港轮询³]}
-  - {name: "自动切换³", <<: *proxy_groups_health_check_proxy, type: url-test, tolerance: 5, use: [Subscription_3], exclude-filter: "(?i)(?:CN|中国|国内)", hidden: true}
-  - {name: "故障排除³", <<: *proxy_groups_health_check_proxy, type: fallback, use: [Subscription_3], hidden: true}
-  - {name: "美国哈希³", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, use: [Subscription_3], filter: "(?i)(?:🇺🇸|🇺🇲|美|United States|UnitedStates|America)", hidden: true}
-  - {name: "美国轮询³", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, use: [Subscription_3], filter: "(?i)(?:🇺🇸|🇺🇲|美|United States|UnitedStates|America)", hidden: true}
-  - {name: "日本哈希³", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, use: [Subscription_3], filter: "(?i)(?:🇯🇵|日|东京|Japan|Nippon|Nihon)", hidden: true}
-  - {name: "日本轮询³", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, use: [Subscription_3], filter: "(?i)(?:🇯🇵|日|东京|Japan|Nippon|Nihon)", hidden: true}
-  - {name: "狮城哈希³", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, use: [Subscription_3], filter: "(?i)(?:🇸🇬|新加坡|狮城|Singapore|Singapura)", hidden: true}
-  - {name: "狮城轮询³", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, use: [Subscription_3], filter: "(?i)(?:🇸🇬|新加坡|狮城|Singapore|Singapura)", hidden: true}
-  - {name: "香港哈希³", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, use: [Subscription_3], filter: "(?i)(?:🇭🇰|港|Hong Kong|HongKong)", hidden: true}
-  - {name: "香港轮询³", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, use: [Subscription_3], filter: "(?i)(?:🇭🇰|港|Hong Kong|HongKong)", hidden: true}
+  - {name: "自动切换²", <<: [*url_test1, *filter_Back], use: [Subscription_2], hidden: true}
+  - {name: "故障排除²", <<: [*fallback1, *filter_Back], use: [Subscription_2], hidden: true}
+  - {name: "美国自动²", <<: [*url_test1, *filter_US], use: [Subscription_2], hidden: true}
+  - {name: "日本自动²", <<: [*url_test1, *filter_JP], use: [Subscription_2], hidden: true}
+  - {name: "狮城自动²", <<: [*url_test1, *filter_SG], use: [Subscription_2], hidden: true}
+  - {name: "香港自动²", <<: [*url_test1, *filter_HK], use: [Subscription_2], hidden: true}
+  - {name: "美国轮询²", <<: [*load_balance1, *filter_US], use: [Subscription_2], hidden: true}
+  - {name: "日本轮询²", <<: [*load_balance1, *filter_JP], use: [Subscription_2], hidden: true}
+  - {name: "狮城轮询²", <<: [*load_balance1, *filter_SG], use: [Subscription_2], hidden: true}
+  - {name: "香港轮询²", <<: [*load_balance1, *filter_HK], use: [Subscription_2], hidden: true}
 
-  - {name: "Free Cloud", type: select, proxies: [自动切换⁴, 故障排除⁴, 美国哈希⁴, 美国轮询⁴, 日本哈希⁴, 日本轮询⁴, 狮城哈希⁴, 狮城轮询⁴, 香港哈希⁴, 香港轮询⁴]}
-  - {name: "自动切换⁴", <<: *proxy_groups_health_check_proxy, type: url-test, tolerance: 5, use: [Subscription_4], exclude-filter: "(?i)(?:CN|中国|国内)", hidden: true}
-  - {name: "故障排除⁴", <<: *proxy_groups_health_check_proxy, type: fallback, use: [Subscription_4], hidden: true}
-  - {name: "美国哈希⁴", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, use: [Subscription_4], filter: "(?i)(?:🇺🇸|🇺🇲|美|United States|UnitedStates|America)", hidden: true}
-  - {name: "美国轮询⁴", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, use: [Subscription_4], filter: "(?i)(?:🇺🇸|🇺🇲|美|United States|UnitedStates|America)", hidden: true}
-  - {name: "日本哈希⁴", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, use: [Subscription_4], filter: "(?i)(?:🇯🇵|日|东京|Japan|Nippon|Nihon)", hidden: true}
-  - {name: "日本轮询⁴", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, use: [Subscription_4], filter: "(?i)(?:🇯🇵|日|东京|Japan|Nippon|Nihon)", hidden: true}
-  - {name: "狮城哈希⁴", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, use: [Subscription_4], filter: "(?i)(?:🇸🇬|新加坡|狮城|Singapore|Singapura)", hidden: true}
-  - {name: "狮城轮询⁴", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, use: [Subscription_4], filter: "(?i)(?:🇸🇬|新加坡|狮城|Singapore|Singapura)", hidden: true}
-  - {name: "香港哈希⁴", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: consistent-hashing, use: [Subscription_4], filter: "(?i)(?:🇭🇰|港|Hong Kong|HongKong)", hidden: true}
-  - {name: "香港轮询⁴", <<: *proxy_groups_health_check_proxy, type: load-balance, strategy: round-robin, use: [Subscription_4], filter: "(?i)(?:🇭🇰|港|Hong Kong|HongKong)", hidden: true}
+  - {name: "自动切换³", <<: [*url_test1, *filter_Back], use: [Subscription_3], hidden: true}
+  - {name: "故障排除³", <<: [*fallback1, *filter_Back], use: [Subscription_3], hidden: true}
+  - {name: "美国自动³", <<: [*url_test1, *filter_US], use: [Subscription_3], hidden: true}
+  - {name: "日本自动³", <<: [*url_test1, *filter_JP], use: [Subscription_3], hidden: true}
+  - {name: "狮城自动³", <<: [*url_test1, *filter_SG], use: [Subscription_3], hidden: true}
+  - {name: "香港自动³", <<: [*url_test1, *filter_HK], use: [Subscription_3], hidden: true}
+  - {name: "美国轮询³", <<: [*load_balance1, *filter_US], use: [Subscription_3], hidden: true}
+  - {name: "日本轮询³", <<: [*load_balance1, *filter_JP], use: [Subscription_3], hidden: true}
+  - {name: "狮城轮询³", <<: [*load_balance1, *filter_SG], use: [Subscription_3], hidden: true}
+  - {name: "香港轮询³", <<: [*load_balance1, *filter_HK], use: [Subscription_3], hidden: true}
+
+  - {name: "自动切换⁴", <<: [*url_test1, *filter_Back], use: [Subscription_4], hidden: true}
+  - {name: "故障排除⁴", <<: [*fallback1, *filter_Back], use: [Subscription_4], hidden: true}
+  - {name: "美国自动⁴", <<: [*url_test1, *filter_US], use: [Subscription_4], hidden: true}
+  - {name: "日本自动⁴", <<: [*url_test1, *filter_JP], use: [Subscription_4], hidden: true}
+  - {name: "狮城自动⁴", <<: [*url_test1, *filter_SG], use: [Subscription_4], hidden: true}
+  - {name: "香港自动⁴", <<: [*url_test1, *filter_HK], use: [Subscription_4], hidden: true}
+  - {name: "美国轮询⁴", <<: [*load_balance1, *filter_US], use: [Subscription_4], hidden: true}
+  - {name: "日本轮询⁴", <<: [*load_balance1, *filter_JP], use: [Subscription_4], hidden: true}
+  - {name: "狮城轮询⁴", <<: [*load_balance1, *filter_SG], use: [Subscription_4], hidden: true}
+  - {name: "香港轮询⁴", <<: [*load_balance1, *filter_HK], use: [Subscription_4], hidden: true}
+
+  - {name: "以太网 + WLAN", <<: *load_balance2, proxies: [以太网, WLAN], hidden: true}
+  - {name: "wlan0 + wlan1", <<: *load_balance2, proxies: [wlan0, wlan1], hidden: true}
+  - {name: "data0 + wlan0", <<: *load_balance2, proxies: [rmnet_data0, wlan0], hidden: true}
+  - {name: "data0 + wlan1", <<: *load_balance2, proxies: [rmnet_data0, wlan1], hidden: true}
+  - {name: "data1 + wlan0", <<: *load_balance2, proxies: [rmnet_data1, wlan0], hidden: true}
+  - {name: "data1 + wlan1", <<: *load_balance2, proxies: [rmnet_data1, wlan1], hidden: true}
+  - {name: "data2 + wlan0", <<: *load_balance2, proxies: [rmnet_data2, wlan0], hidden: true}
+  - {name: "data2 + wlan1", <<: *load_balance2, proxies: [rmnet_data2, wlan1], hidden: true}
+  - {name: "data3 + wlan0", <<: *load_balance2, proxies: [rmnet_data3, wlan0], hidden: true}
+  - {name: "data3 + wlan1", <<: *load_balance2, proxies: [rmnet_data3, wlan1], hidden: true}
+
+  - {name: "自动切换", <<: [*url_test1, *filter_Back], include-all-providers: true, hidden: true}
+  - {name: "故障排除", <<: [*fallback1, *filter_Back], include-all-providers: true, hidden: true}
+  - {name: "负载轮询", <<: [*load_balance1, *filter_Back], include-all-providers: true, hidden: true}
+
+  - {name: "跳过规则", type: select, proxies: [PASS], hidden: true}
+  - {name: "拦截数据", type: select, proxies: [REJECT-DROP], hidden: true}
 
 
-rule-providers-anchor: # 锚点 如合并时有重复的项, 则不会去合并
-  rule_domain: &rule_domain {type: http, behavior: domain, format: mrs}
-  rule_ipcidr: &rule_ipcidr {type: http, behavior: ipcidr, format: mrs}
-  rule_classical: &rule_classical {type: http, behavior: classical, format: yaml}
+rule-providers-anchor: # 锚点 如合并时有重复的项, 则不会去合并; 锚点名不能包含特殊字符
+  rule_domain: &rule_domain {type: http, behavior: domain, format: mrs, proxy: DIRECT}
+  rule_ipcidr: &rule_ipcidr {type: http, behavior: ipcidr, format: mrs, proxy: DIRECT}
+  rule_classical: &rule_classical {type: http, behavior: classical, format: yaml, proxy: DIRECT}
 
-rule-providers: # 利用规则集合, 可以在较低资源占用情况下引用大量规则; 使用 domain/ipcidr 类规则集, 使匹配更高效 classical 性能略差
+rule-providers: # 利用规则集合, 可以在较低资源占用情况下引用大量规则; domain/ipcidr 类规则集, 比 classical 类规则集匹配更高效
   AdGuard_DNS_filter:
     <<: *rule_classical
     path: "./rule_providers/classical/AdGuard_DNS_filter"
@@ -377,23 +383,23 @@ rule-providers: # 利用规则集合, 可以在较低资源占用情况下引用
     path: "./rule_providers/ipcidr/cn"
     url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cn.mrs"
 
-sub-rules: # 子规则
+sub-rules: # 子规则 匹配到 sub-rules 时, 未命中则使用 rules
 
-rules: # 分流规则可以直接引用代理或策略组, 但不能引用远程代理集; 对于每一条连接, 总是从上到下匹配规则
-  - "DST-PORT,53,DNS 劫持" # 劫持 DNS 到 Clash 内部 DNS 模块
-  - "RULE-SET,AdGuard_DNS_filter,REJECT-DROP" # 需要拦截的广告 大部分情况可能出现误杀
+rules: # 分流规则可以直接引用代理或策略组, 但不能引用远程代理集; 对于每一条连接, 总是从上到下匹配规则; 需要复杂条件时, 可以用逻辑运算符去组合多个规则. 并且逻辑规则是可以相互嵌套的
+  - "DST-PORT,53,dns-hijacking" # 劫持 DNS 到 Clash 内部 DNS 模块
+  - "RULE-SET,AdGuard_DNS_filter,拦截数据" # 需要拦截的广告 大部分情况可能出现误杀
   - "AND,((NETWORK,udp),(DST-PORT,443),(OR,(NOT,((RULE-SET,site_cn))),(NOT,((RULE-SET,ip_cn))))),🅀🅄🄸🄲" # 国内以外的 QUIC
-  - "OR,((DOMAIN-KEYWORD,stun),(DOMAIN-KEYWORD,turn)),隐私泄露" # STUN/TURN 服务
-  - "OR,((RULE-SET,site_category-httpdns),(DOMAIN-KEYWORD,httpdns)),REJECT-DROP" # 拦截 httpdns 服务, 以确保这些请求能够在 Clash 的 DNS 框架下工作
+  - "AND,((NETWORK,udp),(OR,(DST-PORT,3478/5349/49152-65535),(DST-PORT,19302)),(OR,(DOMAIN-KEYWORD,stun),(DOMAIN-KEYWORD,turn))),隐私泄露" # 是否禁用 stun/turn 协议的 udp 数据，禁用后可以有效解决 webrtc 的 ip 泄露
+  - "AND,((DST-PORT,5228-5230),(RULE-SET,site_googlefcm)),谷歌推送" # 谷歌推送 直连确保 DNS 无污染/劫持
+  - "OR,((RULE-SET,site_category-httpdns),(DOMAIN-KEYWORD,httpdns)),拦截数据" # 拦截 httpdns 服务, 以确保这些请求能够在 Clash 的 DNS 框架下工作
   - "OR,((RULE-SET,site_private),(RULE-SET,ip_private)),直连策略" # 局域网..
-  - "OR,((RULE-SET,site_googlefcm),(DST-PORT,5228-5230)),谷歌推送" # 谷歌推送 直连确保 DNS 无污染/劫持
   - "OR,((RULE-SET,site_category-public-tracker),(RULE-SET,site_category-pt)),种子传输"
   - "OR,((RULE-SET,site_category-games@cn),(RULE-SET,site_category-games@cn)),游戏娱乐" # 部分 cn 域名
   - "OR,((RULE-SET,site_netflix),(RULE-SET,ip_netflix)),奈飞影视"
-  - "OR,((RULE-SET,site_cloudflare),(RULE-SET,ip_cloudflare)),Internet"
-  - "OR,((RULE-SET,site_google),(RULE-SET,ip_google)),Internet"
-  - "OR,((RULE-SET,site_alibaba),(IP-ASN,59054),(IP-ASN,59054),(IP-ASN,59053),(IP-ASN,59052),(IP-ASN,59051),(IP-ASN,59028),(IP-ASN,45104),(IP-ASN,45103),(IP-ASN,37963)),直连策略"
-  - "OR,((RULE-SET,site_tencent),(IP-ASN,45090),(IP-ASN,133478),(IP-ASN,132203)),直连策略"
+  - "OR,((RULE-SET,site_cloudflare),(RULE-SET,ip_cloudflare)),协议互联"
+  - "OR,((RULE-SET,site_google),(RULE-SET,ip_google)),协议互联"
+  - "OR,((RULE-SET,site_alibaba),(IP-ASN,37963)),直连策略"
+  - "OR,((RULE-SET,site_tencent),(IP-ASN,45090),(IP-ASN,132203)),直连策略"
   - "OR,((RULE-SET,site_cn),(RULE-SET,ip_cn)),直连策略" # 部分 cn 域名/ip
   - "MATCH,Internet" # 匹配所有请求, 无需条件
 
