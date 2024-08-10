@@ -131,7 +131,7 @@ proxy-providers-anchor: # 锚点 如合并时有重复的项, 则不会去合并
 proxy-providers: # 支持直接使用 V2rayN 等客户端的普通订阅; 一个合法的远程代理集必须包含 proxies 字段, 远程代理集为空时会以 DIRECT 替代
   'Provider_1': # Prov¹ 优选订阅 //订阅名称
     type: http # 必须, provider 类型 http/file
-    url: 'https:/' # 你的订阅链接
+    url: 'https://' # 你的订阅链接
     path: './proxy_providers/Provider_1.yaml' # 配置保存位置
     <<: [*health_check, *header, *update, *filter_exclude_Ad]
     override:
@@ -254,8 +254,8 @@ proxy-groups: # 策略组可以包含多个代理, 或多个远程代理集; 不
   - {name: 'Fallback', <<: [*fallback1, *filter_exclude_Back], include-all-providers: true, hidden: true}
   - {name: 'R robin', <<: [*load_balance1, *filter_exclude_Back], include-all-providers: true, hidden: true}
 
-  - {name: 'Pass rules', type: select, proxies: [PASS]}
-  - {name: 'Reject drop', type: select, proxies: [REJECT-DROP]}
+  - {name: 'Pass rules', type: select, proxies: [PASS], hidden: true}
+  - {name: 'Reject drop', type: select, proxies: [REJECT-DROP], hidden: true}
 
 rule-providers-anchor: # 锚点 如合并时有重复的项, 则不会去合并; 锚点名不能包含特殊字符
   rule_domain: &rule_domain {type: http, behavior: domain, format: mrs, proxy: Direct}
