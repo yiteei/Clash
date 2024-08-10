@@ -176,7 +176,7 @@ proxy-groups-anchor: # 锚点 如合并时有重复的项, 则不会去合并; �
   - proxies1: &proxies1 {proxies: [Proxy, Direct, Prov¹, Prov², Prov³, Prov⁴]}
   - proxies2: &proxies2 {proxies: [Direct, Proxy, Prov¹, Prov², Prov³, Prov⁴]}
   - url_test1: &url_test1 {type: url-test, lazy: true, expected-status: 204, url: 'https://www.google.com', timeout: 2000, interval: 45, max-failed-times: 3, tolerance: 5}
-  - url_test2: &url_test2 {type: url-test, lazy: true, url: 'https://www.tencent.com', expected-status: 204, timeout: 2000, interval: 45, max-failed-times: 3, tolerance: 5}
+  - url_test2: &url_test2 {type: url-test, lazy: true, expected-status: 204, url: 'https://www.tencent.com', timeout: 2000, interval: 45, max-failed-times: 3, tolerance: 5}
   - fallback1: &fallback1 {type: fallback, lazy: true, expected-status: 204, url: 'https://www.google.com', timeout: 2000, interval: 45, max-failed-times: 3, tolerance: 5}
   - load_balance1: &load_balance1 {type: load-balance, strategy: round-robin, lazy: true, expected-status: 204, url: 'https://www.google.com', timeout: 2000, interval: 45, max-failed-times: 3, tolerance: 5}
   - load_balance2: &load_balance2 {type: load-balance, strategy: round-robin, lazy: true, url: 'https://www.tencent.com', expected-status: 204, timeout: 2000, interval: 45, max-failed-times: 3, tolerance: 5}
