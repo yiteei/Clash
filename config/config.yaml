@@ -1,4 +1,4 @@
-#!MANAGED-CONFIG https://gist.githubusercontent.com/x/x/raw/x.yaml
+#!MANAGED-CONFIG https://gist.githubusercontent.com/yiteei/6554814bf124aabd25f3995da3af5e1c/raw/clash.yaml
 #################### START ####################
 mode: 'rule' # 运行模式 rule/global/direct, 暂不支持 script
 log-level: 'debug' # 日志级别 silent/error/warning/info/debug
@@ -129,41 +129,41 @@ proxy-providers-anchor: # 锚点 如合并时有重复的项, 则不会去合并
   - override: &override {skip-cert-verify: false, ip-version: 'ipv6-prefer'} # 覆写
 
 proxy-providers: # 支持直接使用 V2rayN 等客户端的普通订阅; 一个合法的远程代理集必须包含 proxies 字段, 远程代理集为空时会以 DIRECT 替代
-  'Provider_1': # Prov¹ 优选订阅 //订阅名称
+  'Provider_1': # 小鸡快跑 aff: https://v2.xiaojikp.cc/#/register?invitecode=z1RKg6KW
     type: http # 必须, provider 类型 http/file
-    url: 'https://' # 你的订阅链接
+    url: 'https://moistr.freenods.sbs/mianfeicf' # 单引号内填入你的订阅链接
     path: './proxy_providers/Provider_1.yaml' # 配置保存位置
     <<: [*health_check, *header, *update, *filter_exclude_Ad]
     override:
       <<: *override
-      additional-suffix: '@Moist_R' # 为节点名称添加固定后缀
+      additional-suffix: '@Prov¹' # 为节点名称添加固定后缀
 
-  'Provider_2': # CM 优选订阅
+  'Provider_2': # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http
-    url: 'https://' # 你的订阅链接
+    url: 'https://vless.fxxk.dedyn.io/auto' # 单引号内填入你的订阅链接
     path: './proxy_providers/Provider_2.yaml' # 配置保存位置
     <<: [*health_check, *header, *update, *filter_exclude_Ad]
     override:
       <<: *override
-      additional-suffix: '@CMLiussss' # 为节点名称添加固定后缀
+      additional-suffix: '@Prov²' # 为节点名称添加固定后缀
 
   'Provider_3': # 小鸡快跑 aff: https://v2.xiaojikp.cc/#/register?invitecode=z1RKg6KW
     type: http
-    url: 'https://' # 你的订阅链接
+    url: 'https://xjkpdyv1.xjsublink.com/api/v1/client/subscribe?token=298732421887ca070cde96358b76bca5' # 单引号内填入你的订阅链接
     path: './proxy_providers/Provider_3.yaml' # 配置保存位置
     <<: [*health_check, *header, *update, *filter_exclude_Ad]
     override:
       <<: *override
-      additional-suffix: '@小鸡快跑' # 为节点名称添加固定后缀
+      additional-suffix: '@Prov³' # 为节点名称添加固定后缀
 
   'Provider_4': # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http
-    url: 'https://' # 你的订阅链接
+    url: 'https://pro.76898102.xyz/api/v1/client/subscribe?token=d1c7784dcf715540766927b3a72a0145' # 单引号内填入你的订阅链接
     path: './proxy_providers/Provider_4.yaml' # 配置保存位置
     <<: [*health_check, *header, *update, *filter_exclude_Ad]
     override:
       <<: *override
-      additional-suffix: '@Free Cloud' # 为节点名称添加固定后缀
+      additional-suffix: '@Prov⁴' # 为节点名称添加固定后缀
 
 
 
