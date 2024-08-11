@@ -1,4 +1,4 @@
-#!MANAGED-CONFIG https://gist.githubusercontent.com/yiteei//raw/clash.yaml
+#!MANAGED-CONFIG https://gist.githubusercontent.com/yiteei//raw/config.yaml
 #################### START ####################
 mode: 'rule' # 运行模式 rule/global/direct, 暂不支持 script
 log-level: 'debug' # 日志级别 silent/error/warning/info/debug
