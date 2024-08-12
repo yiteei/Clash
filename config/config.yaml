@@ -1,4 +1,4 @@
-#!MANAGED-CONFIG https://gist.githubusercontent.com/yiteei//raw/config.yaml
+#!MANAGED-CONFIG https://gist.githubusercontent.com/yiteei//raw/clash.yaml
 #################### START ####################
 mode: 'rule' # 运行模式 rule/global/direct, 暂不支持 script
 log-level: 'debug' # 日志级别 silent/error/warning/info/debug
@@ -102,8 +102,8 @@ sniffer: # Sniffer 域名嗅器 通过读取握手包内的域名字段, 将 IP 
 
 
 
-ntp: # NTP 服务器配置 开启后启动要慢些 如果使用 Vmess 协议, 客户端和 VPS 的时间误差超 90s, 就会导致不能正常使用(和时区无关)
-  enable: true # 是否启用 NTP 服务
+ntp: # NTP 服务器配置 如果使用 Vmess 协议, 客户端和 VPS 的时间误差超 90s, 就会导致不能正常使用(和时区无关)
+  enable: false # 是否启用 NTP 服务
   write-to-system: true # 是否同步至系统时间, 需要 root/管理员模式 运行
   server: 'ntp.ntsc.ac.cn' # NTP 服务地址
   port: 123 # NTP 服务端口, 默认 123
@@ -122,11 +122,11 @@ proxies: # 出站配置 查看接口命令: netsh interface show interface  Tip:
   - {name: 'rmnet_data3', type: direct, udp: true, interface-name: 'rmnet_data3'}
 
 proxy-providers-anchor: # 锚点 如合并时有重复的项, 则不会去合并; 锚点名不能包含特殊字符
-  - health_check: &health_check {health-check: {enable: true, expected-status: 204, url: 'https://www.apple.com/library/test/success.html', timeout: 5000, interval: 45}} # 延迟检测
+  - health_check: &health_check {health-check: {enable: true, expected-status: 204, url: 'https://www.apple.com/library/test/success.html', timeout: 3500, interval: 6}} # 延迟检测
   - header: &header {header: {User-Agent: ['clash.meta', 'meta', 'mihomo', 'clash-verge', 'ClashMetaForAndroid', 'flclash', 'stash', 'ClashforWindows', 'ClashForAndroid', 'clash']}} # UA
   - update: &update {proxy: Provider, interval: 86400} # 更新 provider 使用的节点或策略组/更新 provider 的间隔, 单位 s  Tip: 设置的过于小可能被机场 ban
-  - filter_exclude_Ad: &filter_exclude_Ad {filter: '^(?=.*(.))(?!.*((?i)群|邀请|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|无法|说明|使用|提示|特别|访问|支持|教程|关注|更新|作者|加入|(\b(USE|USED|TOTAL|EXPIRE|EMAIL|Panel|Channel|Author)\b|(\d{4}-\d{2}-\d{2}|\d+G)))).*$'} # 引入筛选/排除, 使用筛选可能会在一定程度上增加CPU占用/转发延迟, 尤其是使用较为复杂正则的情况下
-  - override: &override {skip-cert-verify: false, ip-version: 'ipv4-prefer'} # 覆写
+  - filter_exclude_Ad: &filter_exclude_Ad {filter: '^(?=.*(.))(?!.*((?i)群|邀请|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|导航|倒卖|防止|国内|地址|频道|无法|说明|使用|提示|特别|访问|支持|教程|关注|更新|作者|加入|(\b(USE|USED|TG|TOTAL|EXPIRE|EMAIL|Panel|Channel|Author)\b|(\d{4}-\d{2}-\d{2}|\d+G)))).*$'} # 引入筛选/排除, 使用筛选可能会在一定程度上增加CPU占用/转发延迟, 尤其是使用较为复杂正则的情况下
+  - override: &override {ip-version: 'ipv4-prefer'} # 覆写
 
 proxy-providers: # 支持直接使用 V2rayN 等客户端的普通订阅; 一个合法的远程代理集必须包含 proxies 字段, 远程代理集为空时会以 DIRECT 替代
   Provider_1: # 小鸡快跑 aff: https://v2.xiaojikp.cc/#/register?invitecode=z1RKg6KW
@@ -177,13 +177,12 @@ proxy-groups-anchor: # 锚点 如合并时有重复的项, 则不会去合并; �
   - proxies_P: &proxies_P {proxies: [Proxy, Direct, Prov¹, Prov², Prov³, Prov⁴]}
   - proxies_D: &proxies_D {proxies: [Direct, Proxy, Prov¹, Prov², Prov³, Prov⁴]}
 
-  - url_test: &url_test {type: url-test, expected-status: 204, url: 'https://www.apple.com/library/test/success.html', timeout: 5000, interval: 45, max-failed-times: 2, tolerance: 5}
+  - url_test: &url_test {type: url-test, expected-status: 204, url: 'https://www.apple.com/library/test/success.html', timeout: 3500, max-failed-times: 2, interval: 6, tolerance: 15}
 
-  - fall_back: &fall_back {type: fallback, expected-status: 204, url: 'https://www.apple.com/library/test/success.html', timeout: 5000, interval: 45, max-failed-times: 2, tolerance: 5}
-  - fall_back_Netflix: &fall_back_Netflix {type: fallback, expected-status: 204, url: 'https://www.netflix.com', timeout: 5000, interval: 45, max-failed-times: 2, tolerance: 5}
+  - fall_back: &fall_back {type: fallback, expected-status: 204, url: 'https://www.apple.com/library/test/success.html', timeout: 3500, max-failed-times: 2, interval: 6}
+  - fall_back_Netflix: &fall_back_Netflix {type: fallback, expected-status: 204, url: 'https://www.netflix.com', timeout: 3500, max-failed-times: 2, interval: 6}
 
-  - rrobin_P: &rrobin_P {type: load-balance, strategy: round-robin, expected-status: 204, url: 'https://www.apple.com/library/test/success.html', timeout: 5000, interval: 45, max-failed-times: 2, tolerance: 5}
-  - rrobin_D: &rrobin_D {type: load-balance, strategy: round-robin, expected-status: 204, url: 'https://www.tencent.com', timeout: 5000, interval: 45, max-failed-times: 2, tolerance: 5}
+  - rrobin: &rrobin {type: load-balance, strategy: round-robin, expected-status: 204, url: 'https://www.apple.com/library/test/success.html', timeout: 3500, max-failed-times: 2, interval: 6}
 
 proxy-groups: # 策略组可以包含多个代理, 或多个远程代理集; 不包含任何代理的策略组, 会被当作为 DIRECT 策略处理; 如策略组代理来自远程代理集时, 则使用该来源的 health-check
   - {name: 'Auto¹', <<: [*url_test, *filter_exclude_Back], use: [Provider_1], hidden: true}
@@ -215,36 +214,36 @@ proxy-groups: # 策略组可以包含多个代理, 或多个远程代理集; 不
   - {name: 'US auto³', <<: [*url_test, *filter_US], use: [Provider_3], hidden: true}
   - {name: 'US auto⁴', <<: [*url_test, *filter_US], use: [Provider_4], hidden: true}
 
-  - {name: 'HK rrobin¹', <<: [*rrobin_P, *filter_HK], use: [Provider_1], hidden: true}
-  - {name: 'HK rrobin²', <<: [*rrobin_P, *filter_HK], use: [Provider_2], hidden: true}
-  - {name: 'HK rrobin³', <<: [*rrobin_P, *filter_HK], use: [Provider_3], hidden: true}
-  - {name: 'HK rrobin⁴', <<: [*rrobin_P, *filter_HK], use: [Provider_4], hidden: true}
+  - {name: 'HK rrobin¹', <<: [*rrobin, *filter_HK], use: [Provider_1], hidden: true}
+  - {name: 'HK rrobin²', <<: [*rrobin, *filter_HK], use: [Provider_2], hidden: true}
+  - {name: 'HK rrobin³', <<: [*rrobin, *filter_HK], use: [Provider_3], hidden: true}
+  - {name: 'HK rrobin⁴', <<: [*rrobin, *filter_HK], use: [Provider_4], hidden: true}
  
-  - {name: 'JP rrobin¹', <<: [*rrobin_P, *filter_JP], use: [Provider_1], hidden: true}
-  - {name: 'JP rrobin²', <<: [*rrobin_P, *filter_JP], use: [Provider_2], hidden: true}
-  - {name: 'JP rrobin³', <<: [*rrobin_P, *filter_JP], use: [Provider_3], hidden: true}
-  - {name: 'JP rrobin⁴', <<: [*rrobin_P, *filter_JP], use: [Provider_4], hidden: true}
+  - {name: 'JP rrobin¹', <<: [*rrobin, *filter_JP], use: [Provider_1], hidden: true}
+  - {name: 'JP rrobin²', <<: [*rrobin, *filter_JP], use: [Provider_2], hidden: true}
+  - {name: 'JP rrobin³', <<: [*rrobin, *filter_JP], use: [Provider_3], hidden: true}
+  - {name: 'JP rrobin⁴', <<: [*rrobin, *filter_JP], use: [Provider_4], hidden: true}
 
-  - {name: 'SG rrobin¹', <<: [*rrobin_P, *filter_SG], use: [Provider_1], hidden: true}
-  - {name: 'SG rrobin²', <<: [*rrobin_P, *filter_SG], use: [Provider_2], hidden: true}
-  - {name: 'SG rrobin³', <<: [*rrobin_P, *filter_SG], use: [Provider_3], hidden: true}
-  - {name: 'SG rrobin⁴', <<: [*rrobin_P, *filter_SG], use: [Provider_4], hidden: true}
+  - {name: 'SG rrobin¹', <<: [*rrobin, *filter_SG], use: [Provider_1], hidden: true}
+  - {name: 'SG rrobin²', <<: [*rrobin, *filter_SG], use: [Provider_2], hidden: true}
+  - {name: 'SG rrobin³', <<: [*rrobin, *filter_SG], use: [Provider_3], hidden: true}
+  - {name: 'SG rrobin⁴', <<: [*rrobin, *filter_SG], use: [Provider_4], hidden: true}
 
-  - {name: 'US rrobin¹', <<: [*rrobin_P, *filter_US], use: [Provider_1], hidden: true}
-  - {name: 'US rrobin²', <<: [*rrobin_P, *filter_US], use: [Provider_2], hidden: true}
-  - {name: 'US rrobin³', <<: [*rrobin_P, *filter_US], use: [Provider_3], hidden: true}
-  - {name: 'US rrobin⁴', <<: [*rrobin_P, *filter_US], use: [Provider_4], hidden: true}
+  - {name: 'US rrobin¹', <<: [*rrobin, *filter_US], use: [Provider_1], hidden: true}
+  - {name: 'US rrobin²', <<: [*rrobin, *filter_US], use: [Provider_2], hidden: true}
+  - {name: 'US rrobin³', <<: [*rrobin, *filter_US], use: [Provider_3], hidden: true}
+  - {name: 'US rrobin⁴', <<: [*rrobin, *filter_US], use: [Provider_4], hidden: true}
 
-  - {name: '以太网 + WLAN', <<: *rrobin_D, proxies: [以太网, WLAN], hidden: true}
-  - {name: 'wlan0 + wlan1', <<: *rrobin_D, proxies: [wlan0, wlan1], hidden: true}
-  - {name: 'data0 + wlan0', <<: *rrobin_D, proxies: [rmnet_data0, wlan0], hidden: true}
-  - {name: 'data0 + wlan1', <<: *rrobin_D, proxies: [rmnet_data0, wlan1], hidden: true}
-  - {name: 'data1 + wlan0', <<: *rrobin_D, proxies: [rmnet_data1, wlan0], hidden: true}
-  - {name: 'data1 + wlan1', <<: *rrobin_D, proxies: [rmnet_data1, wlan1], hidden: true}
-  - {name: 'data2 + wlan0', <<: *rrobin_D, proxies: [rmnet_data2, wlan0], hidden: true}
-  - {name: 'data2 + wlan1', <<: *rrobin_D, proxies: [rmnet_data2, wlan1], hidden: true}
-  - {name: 'data3 + wlan0', <<: *rrobin_D, proxies: [rmnet_data3, wlan0], hidden: true}
-  - {name: 'data3 + wlan1', <<: *rrobin_D, proxies: [rmnet_data3, wlan1], hidden: true}
+  - {name: '以太网 + WLAN', <<: *rrobin, proxies: [以太网, WLAN], hidden: true}
+  - {name: 'wlan0 + wlan1', <<: *rrobin, proxies: [wlan0, wlan1], hidden: true}
+  - {name: 'data0 + wlan0', <<: *rrobin, proxies: [rmnet_data0, wlan0], hidden: true}
+  - {name: 'data0 + wlan1', <<: *rrobin, proxies: [rmnet_data0, wlan1], hidden: true}
+  - {name: 'data1 + wlan0', <<: *rrobin, proxies: [rmnet_data1, wlan0], hidden: true}
+  - {name: 'data1 + wlan1', <<: *rrobin, proxies: [rmnet_data1, wlan1], hidden: true}
+  - {name: 'data2 + wlan0', <<: *rrobin, proxies: [rmnet_data2, wlan0], hidden: true}
+  - {name: 'data2 + wlan1', <<: *rrobin, proxies: [rmnet_data2, wlan1], hidden: true}
+  - {name: 'data3 + wlan0', <<: *rrobin, proxies: [rmnet_data3, wlan0], hidden: true}
+  - {name: 'data3 + wlan1', <<: *rrobin, proxies: [rmnet_data3, wlan1], hidden: true}
 
   - {name: 'Auto', <<: [*url_test, *filter_exclude_Back], include-all-providers: true, hidden: true}
   - {name: 'Fallback', <<: [*fall_back, *filter_exclude_Back], include-all-providers: true, hidden: true}
