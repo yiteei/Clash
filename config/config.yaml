@@ -1,4 +1,4 @@
-#!MANAGED-CONFIG https://gist.githubusercontent.com/yiteei//raw/clash.yaml
+#!MANAGED-CONFIG https://gist.githubusercontent.com/x/x/raw/x.yaml
 #################### START ####################
 mode: 'rule' # 运行模式 rule/global/direct, 暂不支持 script
 log-level: 'debug' # 日志级别 silent/error/warning/info/debug
@@ -122,7 +122,7 @@ proxies: # 出站配置 查看接口命令: netsh interface show interface  Tip:
   - {name: 'rmnet_data3', type: direct, udp: true, interface-name: 'rmnet_data3'}
 
 proxy-providers-anchor: # 锚点 如合并时有重复的项, 则不会去合并; 锚点名不能包含特殊字符
-  - health_check: &health_check {health-check: {enable: true, expected-status: 204, url: 'https://www.apple.com/library/test/success.html', timeout: 3500, interval: 6}} # 延迟检测
+  - health_check: &health_check {health-check: {enable: true, expected-status: 204, url: 'https://www.google.com/generate_204', timeout: 3500, interval: 6}} # 延迟检测
   - header: &header {header: {User-Agent: ['clash.meta', 'meta', 'mihomo', 'clash-verge', 'ClashMetaForAndroid', 'flclash', 'stash', 'ClashforWindows', 'ClashForAndroid', 'clash']}} # UA
   - update: &update {proxy: Provider, interval: 86400} # 更新 provider 使用的节点或策略组/更新 provider 的间隔, 单位 s  Tip: 设置的过于小可能被机场 ban
   - filter_exclude_Ad: &filter_exclude_Ad {filter: '^(?=.*(.))(?!.*((?i)群|邀请|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|导航|倒卖|防止|国内|地址|频道|无法|说明|使用|提示|特别|访问|支持|教程|关注|更新|作者|加入|(\b(USE|USED|TG|TOTAL|EXPIRE|EMAIL|Panel|Channel|Author)\b|(\d{4}-\d{2}-\d{2}|\d+G)))).*$'} # 引入筛选/排除, 使用筛选可能会在一定程度上增加CPU占用/转发延迟, 尤其是使用较为复杂正则的情况下
@@ -177,12 +177,12 @@ proxy-groups-anchor: # 锚点 如合并时有重复的项, 则不会去合并; �
   - proxies_P: &proxies_P {proxies: [Proxy, Direct, Prov¹, Prov², Prov³, Prov⁴]}
   - proxies_D: &proxies_D {proxies: [Direct, Proxy, Prov¹, Prov², Prov³, Prov⁴]}
 
-  - url_test: &url_test {type: url-test, expected-status: 204, url: 'https://www.apple.com/library/test/success.html', timeout: 3500, max-failed-times: 2, interval: 6, tolerance: 15}
+  - url_test: &url_test {type: url-test, expected-status: 204, url: 'https://www.google.com/generate_204', timeout: 3500, max-failed-times: 2, interval: 6, tolerance: 15}
 
-  - fall_back: &fall_back {type: fallback, expected-status: 204, url: 'https://www.apple.com/library/test/success.html', timeout: 3500, max-failed-times: 2, interval: 6}
+  - fall_back: &fall_back {type: fallback, expected-status: 204, url: 'https://www.google.com/generate_204', timeout: 3500, max-failed-times: 2, interval: 6}
   - fall_back_Netflix: &fall_back_Netflix {type: fallback, expected-status: 204, url: 'https://www.netflix.com', timeout: 3500, max-failed-times: 2, interval: 6}
 
-  - rrobin: &rrobin {type: load-balance, strategy: round-robin, expected-status: 204, url: 'https://www.apple.com/library/test/success.html', timeout: 3500, max-failed-times: 2, interval: 6}
+  - rrobin: &rrobin {type: load-balance, strategy: round-robin, expected-status: 204, url: 'https://www.google.com/generate_204', timeout: 3500, max-failed-times: 2, interval: 6}
 
 proxy-groups: # 策略组可以包含多个代理, 或多个远程代理集; 不包含任何代理的策略组, 会被当作为 DIRECT 策略处理; 如策略组代理来自远程代理集时, 则使用该来源的 health-check
   - {name: 'Auto¹', <<: [*url_test, *filter_exclude_Back], use: [Provider_1], hidden: true}
