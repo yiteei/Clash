@@ -1,4 +1,4 @@
-#!MANAGED-CONFIG https://gist.githubusercontent.com/yiteei/x/raw/x.yaml
+#!MANAGED-CONFIG https://gist.githubusercontent.com/x/x/raw/x.yaml
 #################### START ####################
 mode: 'rule' # 运行模式 rule/global/direct, 暂不支持 script
 log-level: 'debug' # 日志级别 silent/error/warning/info/debug
@@ -76,6 +76,8 @@ dns: # DNS 服务器书写规范应带引号, 以防出现特殊字符
   proxy-server-nameserver: # 用于节点域名解析 如其他 DNS 需过代理查询/nameserver 为国外 DNS 则配置该项以防出现鸡蛋问题
     - 'https://dns.alidns.com/dns-query' # Alibaba DNS
   nameserver-policy: # 指定的解析服务, 没匹配到使用 nameserver/fallback 并发查询
+    'rule-set:site_geolocation-!cn': # 因为 cn 里包含了 geolocation-!cn 的域名 所以把它放前面
+      - 'https://cloudflare-dns.com/dns-query#Proxy'
     'rule-set:site_private,site_cn':
       - 'https://dns.alidns.com/dns-query#Direct'
 
@@ -129,7 +131,7 @@ proxy-providers-anchor: # 锚点 如合并时有重复的项, 则不会去合并
   - override: &override {ip-version: 'ipv4-prefer'} # 覆写
 
 proxy-providers: # 支持直接使用 V2rayN 等客户端的普通订阅; 一个合法的远程代理集必须包含 proxies 字段, 远程代理集为空时会以 DIRECT 替代
-  Provider_1: # 小鸡快跑 aff: https://v2.xiaojikp.cc/#/register?invitecode=z1RKg6KW
+  Provider_1: # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http # 必须, provider 类型 http/file
     url: '' # 此行单引号内填入你的订阅链接
     <<: [*health_check, *header, *update, *filter_exclude_Ad]
@@ -147,7 +149,7 @@ proxy-providers: # 支持直接使用 V2rayN 等客户端的普通订阅; 一个
       additional-suffix: '@Prov²' # 为节点名称添加固定后缀
     path: './proxy_providers/Provider_2.yaml' # 配置保存位置 '/'代表根目录 './'代表当前目录,'../'代表上级目录
 
-  Provider_3: # 小鸡快跑 aff: https://v2.xiaojikp.cc/#/register?invitecode=z1RKg6KW
+  Provider_3: # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http
     url: '' # 此行单引号内填入你的订阅链接
     path: './proxy_providers/Provider_3.yaml' # 配置保存位置 '/'代表根目录 './'代表当前目录,'../'代表上级目录
