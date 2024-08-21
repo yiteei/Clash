@@ -79,7 +79,7 @@ dns: # DNS 服务器书写规范应带引号, 以防出现特殊字符
     'rule-set:site_geolocation-!cn': # 因为 cn 里包含了 geolocation-!cn 的域名 所以把它放前面
       - 'https://cloudflare-dns.com/dns-query#Proxy'
     'rule-set:site_private,site_cn':
-      - 'https://dns.alidns.com/dns-query#Direct'
+      - 'https://dns.alidns.com/dns-query'
 
 sniffer: # Sniffer 域名嗅器 通过读取握手包内的域名字段, 将 IP 还原成域名
   enable: true # 是否启用
