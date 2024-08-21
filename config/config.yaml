@@ -1,4 +1,4 @@
-#!MANAGED-CONFIG https://gist.githubusercontent.com/x/x/raw/x.yaml
+#!MANAGED-CONFIG https://gist.githubusercontent.com/yiteei/x/raw/x.yaml
 #################### START ####################
 mode: 'rule' # 运行模式 rule/global/direct, 暂不支持 script
 log-level: 'debug' # 日志级别 silent/error/warning/info/debug
@@ -92,7 +92,7 @@ sniffer: # Sniffer 域名嗅器 通过读取握手包内的域名字段, 将 IP 
     QUIC:
       ports: [443, 8443]
   skip-domain: # 需要跳过嗅探的域名, 主要解决部分站点 sni 字段非域名, 导致嗅探结果异常的问题, 如米家设备
-    - '+.apple.com'
+    - '+.push.apple.com'
     - 'Mijia Cloud'
     - 'dlg.io.mi.com'
     - '+.jd.com'
@@ -251,6 +251,7 @@ proxy-groups: # 策略组可以包含多个代理, 或多个远程代理集; 不
   - {name: 'Proxy', type: select, <<: [*url_test], proxies: [Auto, Fallback, Direct, Prov¹, Prov², Prov³, Prov⁴], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Final.png'}
   - {name: 'Direct', type: select, <<: [*url_test], proxies: [𝖠𝗎𝗍𝗈, 以太网 + WLAN, wlan0 + wlan1, data0 + wlan0, data0 + wlan1, data1 + wlan0, data1 + wlan1, data2 + wlan0, data2 + wlan1, data3 + wlan0, data3 + wlan1], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China_Map.png'}
   - {name: 'Google', type: select, proxies: [Direct, Proxy, Fallback], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png'}
+  - {name: 'TGram', type: select, <<: [*proxies_P], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Telegram.png'}
   - {name: 'Netflix', <<: [*fall_back_Netflix, *proxies_P], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Netflix.png'}
   - {name: 'Torrent', type: select, proxies: [Direct, Proxy], include-all-providers: true, filter: '(?i)(?:BT|PT|卢森堡)', icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Server.png'}
   - {name: 'Privacy', type: select, proxies: [REJECT-DROP, PASS, Proxy, Direct], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Hijacking.png'}
@@ -303,10 +304,10 @@ rule-providers: # 利用规则集合, 可以在较低资源占用情况下引用
     <<: *rule_domain
     path: './rule_providers/domain/netflix'
     url: 'https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/netflix.mrs'
-  site_cloudflare:
+  site_telegram:
     <<: *rule_domain
-    path: './rule_providers/domain/cloudflare'
-    url: 'https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/cloudflare.mrs'
+    path: './rule_providers/domain/telegram'
+    url: 'https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/telegram.mrs'
   site_google:
     <<: *rule_domain
     path: './rule_providers/domain/google'
@@ -319,14 +320,23 @@ rule-providers: # 利用规则集合, 可以在较低资源占用情况下引用
     <<: *rule_domain
     path: './rule_providers/domain/tencent'
     url: 'https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/tencent.mrs'
+  site_geolocation-!cn:
+    <<: *rule_domain
+    path: './rule_providers/domain/geolocation-!cn'
+    url: 'https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/geolocation-!cn.mrs'
   site_cn:
     <<: *rule_domain
     path: './rule_providers/domain/cn'
     url: 'https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/cn.mrs'
+
   ip_private:
     <<: *rule_ipcidr
     path: './rule_providers/ipcidr/private'
     url: 'https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/private.mrs'
+  ip_telegram:
+    <<: *rule_ipcidr
+    path: './rule_providers/ipcidr/telegram'
+    url: 'https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/telegram.mrs'
   ip_netflix:
     <<: *rule_ipcidr
     path: './rule_providers/ipcidr/netflix'
@@ -351,17 +361,17 @@ rules: # 分流规则可以直接引用代理或策略组, 但不能引用远程
   - 'RULE-SET,AdGuard_DNS_filter,REJECT-DROP' # 需要拦截的广告 大部分情况可能出现误杀
   - 'AND,((NETWORK,udp),(DST-PORT,443),(NOT,((OR,(RULE-SET,site_cn),(RULE-SET,ip_cn))))),QUIC' # 国内以外的 QUIC
   - 'AND,((NETWORK,udp),(DST-PORT,443/19302/3478/5349/49152-65535),(OR,(DOMAIN-KEYWORD,stun),(DOMAIN-KEYWORD,turn))),Privacy' # 是否禁用 stun/turn 协议的 udp 数据，禁用后可以有效解决 webrtc 的 ip 泄露
-  - 'AND,((DST-PORT,5228-5230),(RULE-SET,site_googlefcm)),Google' # Google 直连确保 DNS 无污染/劫持
+  - 'AND,((DST-PORT,5228-5230),(RULE-SET,site_googlefcm)),Google' # Google FCM 直连确保 DNS 无污染/劫持
   - 'OR,((RULE-SET,site_category-httpdns),(DOMAIN-KEYWORD,httpdns)),REJECT-DROP' # 拦截 httpdns 服务, 以确保这些请求能够在 Clash 的 DNS 框架下工作
   - 'OR,((RULE-SET,site_private),(RULE-SET,ip_private,no-resolve)),Direct' # 局域网..
   - 'OR,((RULE-SET,site_category-public-tracker),(RULE-SET,site_category-pt)),Torrent' # 种子
   - 'OR,((RULE-SET,site_category-games@cn),(RULE-SET,site_category-games@cn)),Recreation' # 游戏相关部分 cn 域名
-  - 'OR,((RULE-SET,site_netflix),(RULE-SET,ip_netflix)),Netflix' # 奈飞
-  - 'OR,((RULE-SET,site_cloudflare),(RULE-SET,ip_cloudflare)),Proxy' # CF
+  - 'OR,((RULE-SET,site_telegram),(RULE-SET,ip_telegram)),TGram' # 电报
+  - 'OR,((RULE-SET,site_netflix),(RULE-SET,ip_netflix)),Netflix' # 奈飞 
   - 'OR,((RULE-SET,site_google),(RULE-SET,ip_google)),Proxy' # 谷歌
-  - 'OR,((RULE-SET,site_alibaba),(IP-ASN,37963)),Direct' # 阿里
   - 'OR,((RULE-SET,site_tencent),(IP-ASN,45090),(IP-ASN,132203)),Direct' # 腾讯
-  - 'OR,((RULE-SET,site_cn),(RULE-SET,ip_cn)),Direct' # 部分 cn 域名/ip
+  - 'OR,((RULE-SET,site_geolocation-!cn),(RULE-SET,ip_cloudflare)),Proxy' # 国外常见域名/ip
+  - 'OR,((RULE-SET,site_cn),(RULE-SET,ip_cn)),Direct' # 部分 cn 域名/ip 
   - 'MATCH,Proxy' # 匹配所有请求, 无需条件
 
 #################### END ####################
