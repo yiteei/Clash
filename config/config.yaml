@@ -112,8 +112,8 @@ ntp: # NTP 服务器配置 如果使用 Vmess 协议, 客户端和 VPS 的时间
   interval: 1440 # 同步时间间隔, 单位 min, 默认 30 min
 
 proxies: # 出站配置 查看接口命令: netsh interface show interface  Tip: 手机需要 root 跑内核 以绑定接口
-  - {name: 'dns-hijacking', type: dns, udp: true} # dns 出站会将请求劫持到内部 dns 模块, 所有请求均在内部处理
-  - {name: '𝖠𝗎𝗍𝗈', type: direct, udp: true}
+  - {name: 'DNS Hijacking', type: dns, udp: true} # dns 出站会将请求劫持到内部 dns 模块, 所有请求均在内部处理
+  - {name: 'Default', type: direct, udp: true}
   - {name: '以太网', type: direct, udp: true, interface-name: '以太网'} # Windows 网线
   - {name: 'WLAN', type: direct, udp: true, interface-name: 'WLAN'} # Windows WiFi
   - {name: 'wlan0', type: direct, udp: true, interface-name: 'wlan0'} # WiFi/W口
@@ -123,152 +123,172 @@ proxies: # 出站配置 查看接口命令: netsh interface show interface  Tip:
   - {name: 'rmnet_data2', type: direct, udp: true, interface-name: 'rmnet_data2'}
   - {name: 'rmnet_data3', type: direct, udp: true, interface-name: 'rmnet_data3'}
 
-proxy-providers-anchor: # 锚点 如合并时有重复的项, 则不会去合并; 锚点名不能包含特殊字符
-  - health_check: &health_check {health-check: {enable: true, expected-status: 204, url: 'https://www.google.com/generate_204', timeout: 3500, interval: 6}} # 延迟检测
-  - header: &header {header: {User-Agent: ['clash.meta', 'meta', 'mihomo', 'clash-verge', 'ClashMetaForAndroid', 'flclash', 'stash', 'ClashforWindows', 'ClashForAndroid', 'clash']}} # UA
+proxy-providers-anchor: # 锚点 如合并时有重复的项, 则不会去合并; 锚点名尽量不要含特殊字符
+  - health_check: &health_check {health-check: {enable: true, expected-status: 204, url: 'https://www.google.com/generate_204', timeout: 3500, interval: 10}} # 延迟检测
+  - header: &header {header: {User-Agent: ['clash-verge', 'ClashMetaForAndroid', 'flclash', 'clash.meta', 'meta', 'mihomo', 'stash', 'ClashforWindows', 'ClashForAndroid', 'clash']}} # UA
   - update: &update {proxy: Provider, interval: 86400} # 更新 provider 使用的节点或策略组/更新 provider 的间隔, 单位 s  Tip: 设置的过于小可能被机场 ban
-  - filter_exclude_Ad: &filter_exclude_Ad {filter: '^(?=.*(.))(?!.*((?i)群|邀请|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|导航|倒卖|防止|国内|地址|频道|无法|说明|使用|提示|特别|访问|支持|教程|关注|更新|作者|加入|(\b(USE|USED|TG|TOTAL|EXPIRE|EMAIL|Panel|Channel|Author)\b|(\d{4}-\d{2}-\d{2}|\d+G)))).*$'} # 引入筛选/排除, 使用筛选可能会在一定程度上增加CPU占用/转发延迟, 尤其是使用较为复杂正则的情况下
+  - filter_exclude_ad: &filter_exclude_ad {filter: '^(?=.*(.))(?!.*((?i)群|邀请|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|导航|倒卖|防止|国内|地址|频道|无法|说明|使用|提示|特别|访问|支持|教程|关注|更新|作者|加入|(\b(USE|USED|TG|TOTAL|EXPIRE|EMAIL|Panel|Channel|Author)\b|(\d{4}-\d{2}-\d{2}|\d+G)))).*$'} # 引入筛选/排除, 使用筛选可能会在一定程度上增加CPU占用/转发延迟, 尤其是使用较为复杂正则的情况下
   - override: &override {ip-version: 'ipv4-prefer'} # 覆写
 
 proxy-providers: # 支持直接使用 V2rayN 等客户端的普通订阅; 一个合法的远程代理集必须包含 proxies 字段, 远程代理集为空时会以 DIRECT 替代
   Provider_1: # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http # 必须, provider 类型 http/file
     url: '' # 此行单引号内填入你的订阅链接
-    <<: [*health_check, *header, *update, *filter_exclude_Ad]
+    <<: [*health_check, *header, *update, *filter_exclude_ad]
     override:
       <<: *override
-      additional-suffix: '@Prov¹' # 为节点名称添加固定后缀
     path: './proxy_providers/Provider_1.yaml' # 配置保存位置 '/'代表根目录 './'代表当前目录,'../'代表上级目录
 
   Provider_2: # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http
     url: '' # 此行单引号内填入你的订阅链接
-    <<: [*health_check, *header, *update, *filter_exclude_Ad]
+    <<: [*health_check, *header, *update, *filter_exclude_ad]
     override:
       <<: *override
-      additional-suffix: '@Prov²' # 为节点名称添加固定后缀
-    path: './proxy_providers/Provider_2.yaml' # 配置保存位置 '/'代表根目录 './'代表当前目录,'../'代表上级目录
+    path: './proxy_providers/Provider_2.yaml' # 配置保存位置
 
   Provider_3: # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http
     url: '' # 此行单引号内填入你的订阅链接
-    path: './proxy_providers/Provider_3.yaml' # 配置保存位置 '/'代表根目录 './'代表当前目录,'../'代表上级目录
-    <<: [*health_check, *header, *update, *filter_exclude_Ad]
+    path: './proxy_providers/Provider_3.yaml' # 配置保存位置
+    <<: [*health_check, *header, *update, *filter_exclude_ad]
     override:
       <<: *override
-      additional-suffix: '@Prov³' # 为节点名称添加固定后缀
 
   Provider_4: # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http
     url: '' # 此行单引号内填入你的订阅链接
-    <<: [*health_check, *header, *update, *filter_exclude_Ad]
+    <<: [*health_check, *header, *update, *filter_exclude_ad]
     override:
       <<: *override
-      additional-suffix: '@Prov⁴' # 为节点名称添加固定后缀
-    path: './proxy_providers/Provider_4.yaml' # 配置保存位置 '/'代表根目录 './'代表当前目录,'../'代表上级目录  
+    path: './proxy_providers/Provider_4.yaml' # 配置保存位置
 
 
 
-proxy-groups-anchor: # 锚点 如合并时有重复的项, 则不会去合并; 锚点名不能包含特殊字符
-  - filter_exclude_Back: &filter_exclude_Back {filter: '^(?!.*((?i)回国|校园)).*$'} # 排除回国
+proxy-groups-anchor: # 锚点 如合并时有重复的项, 则不会去合并; 锚点名尽量不要含特殊字符
+  - filter_exclude_back: &filter_exclude_back {filter: '^(?!.*((?i)回国|校园)).*$'} # 排除回国
   - filter_HK: &filter_HK {filter: '^(?=.*((?i)🇭🇰|香港|(\b(HK|Hong)\b))).*$'}
+  - filter_TW: &filter_TW {filter: '^(?=.*((?i)🇹🇼|台湾|(\b(TW|Tai|Taiwan)\b))).*$'}
   - filter_JP: &filter_JP {filter: '^(?=.*((?i)🇯🇵|日本|川日|东京|大阪|泉日|埼玉|(\b(JP|Japan)\b))).*$'}
+  - filter_KR: &filter_KR {filter: '^(?=.*((?i)🇰🇷|韩国|韓|首尔|(\b(KR|Korea)\b))).*$'}
   - filter_SG: &filter_SG {filter: '^(?=.*((?i)🇸🇬|新加坡|狮|(\b(SG|Singapore)\b))).*$'}
   - filter_US: &filter_US {filter: '^(?=.*((?i)🇺🇸|美国|波特兰|达拉斯|俄勒冈|凤凰城|费利蒙|硅谷|拉斯维加斯|洛杉矶|圣何塞|圣克拉拉|西雅图|芝加哥|(\b(US|United States)\b))).*$'}
+  - filter_UK: &filter_UK {filter: '^(?=.*((?i)🇬🇧|英国|伦敦|(\b(UK|United Kingdom)\b))).*$'}
+  - filter_FR: &filter_FR {filter: '^(?=.*((?i)🇫🇷|法国|(\b(FR|France)\b))).*$'}
+  - filter_DE: &filter_DE {filter: '^(?=.*((?i)🇩🇪|德国|(\b(DE|Germany)\b))).*$'}
 
-  - proxies_P: &proxies_P {proxies: [Proxy, Direct, Prov¹, Prov², Prov³, Prov⁴]}
-  - proxies_D: &proxies_D {proxies: [Direct, Proxy, Prov¹, Prov², Prov³, Prov⁴]}
+  - proxies_proxy: &proxies_proxy {proxies: [Proxy, Direct, Subscription¹, Subscription², Subscription³, Subscription⁴]}
+  - proxies_direct: &proxies_direct {proxies: [Direct, Proxy, Subscription¹, Subscription², Subscription³, Subscription⁴]}
 
-  - url_test: &url_test {type: url-test, expected-status: 204, url: 'https://www.google.com/generate_204', timeout: 3500, max-failed-times: 2, interval: 6, tolerance: 15}
+  - url_test: &url_test {type: url-test, expected-status: 204, url: 'https://www.google.com/generate_204', timeout: 3500, max-failed-times: 2, interval: 10, tolerance: 15}
 
-  - fall_back: &fall_back {type: fallback, expected-status: 204, url: 'https://www.google.com/generate_204', timeout: 3500, max-failed-times: 2, interval: 6}
-  - fall_back_Netflix: &fall_back_Netflix {type: fallback, expected-status: 204, url: 'https://www.netflix.com', timeout: 3500, max-failed-times: 2, interval: 6}
+  - fallback: &fallback {type: fallback, expected-status: 204, url: 'https://www.google.com/generate_204', timeout: 3500, max-failed-times: 2, interval: 10}
+  - fallback_netflix: &fallback_netflix {type: fallback, expected-status: 204, url: 'https://www.netflix.com', timeout: 3500, max-failed-times: 2, interval: 10}
 
-  - rrobin: &rrobin {type: load-balance, strategy: round-robin, expected-status: 204, url: 'https://www.google.com/generate_204', timeout: 3500, max-failed-times: 2, interval: 6}
+  - load_balance: &load_balance {type: load-balance, strategy: round-robin, expected-status: 204, url: 'https://www.google.com/generate_204', timeout: 3500, max-failed-times: 2, interval: 10}
 
 proxy-groups: # 策略组可以包含多个代理, 或多个远程代理集; 不包含任何代理的策略组, 会被当作为 DIRECT 策略处理; 如策略组代理来自远程代理集时, 则使用该来源的 health-check
-  - {name: 'Auto¹', <<: [*url_test, *filter_exclude_Back], use: [Provider_1], hidden: true}
-  - {name: 'Fallback¹', <<: [*fall_back, *filter_exclude_Back], use: [Provider_1], hidden: true}
-  - {name: 'Auto²', <<: [*url_test, *filter_exclude_Back], use: [Provider_2], hidden: true}
-  - {name: 'Fallback²', <<: [*fall_back, *filter_exclude_Back], use: [Provider_2], hidden: true}
-  - {name: 'Auto³', <<: [*url_test, *filter_exclude_Back], use: [Provider_3], hidden: true}
-  - {name: 'Fallback³', <<: [*fall_back, *filter_exclude_Back], use: [Provider_3], hidden: true}
-  - {name: 'Auto⁴', <<: [*url_test, *filter_exclude_Back], use: [Provider_4], hidden: true}
-  - {name: 'Fallback⁴', <<: [*fall_back, *filter_exclude_Back], use: [Provider_4], hidden: true}
-
-  - {name: 'HK auto¹', <<: [*url_test, *filter_HK], use: [Provider_1], hidden: true}
-  - {name: 'HK auto²', <<: [*url_test, *filter_HK], use: [Provider_2], hidden: true}
-  - {name: 'HK auto³', <<: [*url_test, *filter_HK], use: [Provider_3], hidden: true}
-  - {name: 'HK auto⁴', <<: [*url_test, *filter_HK], use: [Provider_4], hidden: true}
-
-  - {name: 'JP auto¹', <<: [*url_test, *filter_JP], use: [Provider_1], hidden: true}
-  - {name: 'JP auto²', <<: [*url_test, *filter_JP], use: [Provider_2], hidden: true}
-  - {name: 'JP auto³', <<: [*url_test, *filter_JP], use: [Provider_3], hidden: true}
-  - {name: 'JP auto⁴', <<: [*url_test, *filter_JP], use: [Provider_4], hidden: true}
-
-  - {name: 'SG auto¹', <<: [*url_test, *filter_SG], use: [Provider_1], hidden: true}
-  - {name: 'SG auto²', <<: [*url_test, *filter_SG], use: [Provider_2], hidden: true}
-  - {name: 'SG auto³', <<: [*url_test, *filter_SG], use: [Provider_3], hidden: true}
-  - {name: 'SG auto⁴', <<: [*url_test, *filter_SG], use: [Provider_4], hidden: true}
-
-  - {name: 'US auto¹', <<: [*url_test, *filter_US], use: [Provider_1], hidden: true}
-  - {name: 'US auto²', <<: [*url_test, *filter_US], use: [Provider_2], hidden: true}
-  - {name: 'US auto³', <<: [*url_test, *filter_US], use: [Provider_3], hidden: true}
-  - {name: 'US auto⁴', <<: [*url_test, *filter_US], use: [Provider_4], hidden: true}
-
-  - {name: 'HK rrobin¹', <<: [*rrobin, *filter_HK], use: [Provider_1], hidden: true}
-  - {name: 'HK rrobin²', <<: [*rrobin, *filter_HK], use: [Provider_2], hidden: true}
-  - {name: 'HK rrobin³', <<: [*rrobin, *filter_HK], use: [Provider_3], hidden: true}
-  - {name: 'HK rrobin⁴', <<: [*rrobin, *filter_HK], use: [Provider_4], hidden: true}
- 
-  - {name: 'JP rrobin¹', <<: [*rrobin, *filter_JP], use: [Provider_1], hidden: true}
-  - {name: 'JP rrobin²', <<: [*rrobin, *filter_JP], use: [Provider_2], hidden: true}
-  - {name: 'JP rrobin³', <<: [*rrobin, *filter_JP], use: [Provider_3], hidden: true}
-  - {name: 'JP rrobin⁴', <<: [*rrobin, *filter_JP], use: [Provider_4], hidden: true}
-
-  - {name: 'SG rrobin¹', <<: [*rrobin, *filter_SG], use: [Provider_1], hidden: true}
-  - {name: 'SG rrobin²', <<: [*rrobin, *filter_SG], use: [Provider_2], hidden: true}
-  - {name: 'SG rrobin³', <<: [*rrobin, *filter_SG], use: [Provider_3], hidden: true}
-  - {name: 'SG rrobin⁴', <<: [*rrobin, *filter_SG], use: [Provider_4], hidden: true}
-
-  - {name: 'US rrobin¹', <<: [*rrobin, *filter_US], use: [Provider_1], hidden: true}
-  - {name: 'US rrobin²', <<: [*rrobin, *filter_US], use: [Provider_2], hidden: true}
-  - {name: 'US rrobin³', <<: [*rrobin, *filter_US], use: [Provider_3], hidden: true}
-  - {name: 'US rrobin⁴', <<: [*rrobin, *filter_US], use: [Provider_4], hidden: true}
-
-  - {name: '以太网 + WLAN', <<: *rrobin, proxies: [以太网, WLAN], hidden: true}
-  - {name: 'wlan0 + wlan1', <<: *rrobin, proxies: [wlan0, wlan1], hidden: true}
-  - {name: 'data0 + wlan0', <<: *rrobin, proxies: [rmnet_data0, wlan0], hidden: true}
-  - {name: 'data0 + wlan1', <<: *rrobin, proxies: [rmnet_data0, wlan1], hidden: true}
-  - {name: 'data1 + wlan0', <<: *rrobin, proxies: [rmnet_data1, wlan0], hidden: true}
-  - {name: 'data1 + wlan1', <<: *rrobin, proxies: [rmnet_data1, wlan1], hidden: true}
-  - {name: 'data2 + wlan0', <<: *rrobin, proxies: [rmnet_data2, wlan0], hidden: true}
-  - {name: 'data2 + wlan1', <<: *rrobin, proxies: [rmnet_data2, wlan1], hidden: true}
-  - {name: 'data3 + wlan0', <<: *rrobin, proxies: [rmnet_data3, wlan0], hidden: true}
-  - {name: 'data3 + wlan1', <<: *rrobin, proxies: [rmnet_data3, wlan1], hidden: true}
-
-  - {name: 'Auto', <<: [*url_test, *filter_exclude_Back], include-all-providers: true, hidden: true}
-  - {name: 'Fallback', <<: [*fall_back, *filter_exclude_Back], include-all-providers: true, hidden: true}
-
-  - {name: 'Proxy', type: select, <<: [*url_test], proxies: [Auto, Fallback, Direct, Prov¹, Prov², Prov³, Prov⁴], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Final.png'}
-  - {name: 'Direct', type: select, <<: [*url_test], proxies: [𝖠𝗎𝗍𝗈, 以太网 + WLAN, wlan0 + wlan1, data0 + wlan0, data0 + wlan1, data1 + wlan0, data1 + wlan1, data2 + wlan0, data2 + wlan1, data3 + wlan0, data3 + wlan1], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China_Map.png'}
+  - {name: 'Proxy', type: select, <<: [*url_test], proxies: [Auto, Fallback, Load Balance, Direct, Subscription¹, Subscription², Subscription³, Subscription⁴], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Final.png'}
+  - {name: 'Direct', type: select, <<: [*url_test], proxies: [Default, 以太网 + WLAN, wlan0 + wlan1, data0 + wlan0, data0 + wlan1, data1 + wlan0, data1 + wlan1, data2 + wlan0, data2 + wlan1, data3 + wlan0, data3 + wlan1], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China_Map.png'}
   - {name: 'Google', type: select, proxies: [Direct, Proxy, Fallback], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png'}
-  - {name: 'TGram', type: select, <<: [*proxies_P], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Telegram.png'}
-  - {name: 'Netflix', <<: [*fall_back_Netflix, *proxies_P], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Netflix.png'}
+  - {name: 'TGram', type: select, <<: [*proxies_proxy], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Telegram.png'}
+  - {name: 'Netflix', <<: [*fallback_netflix, *proxies_proxy], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Netflix.png'}
   - {name: 'Torrent', type: select, proxies: [Direct, Proxy], include-all-providers: true, filter: '(?i)(?:BT|PT|卢森堡)', icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Server.png'}
   - {name: 'Privacy', type: select, proxies: [REJECT-DROP, PASS, Proxy, Direct], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Hijacking.png'}
-  - {name: 'Recreation', type: select, <<: [*proxies_D], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Game.png'}
+  - {name: 'Recreation', type: select, <<: [*proxies_direct], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Game.png'}
   - {name: 'QUIC', type: select, proxies: [PASS, REJECT-DROP], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png'}
-  - {name: 'Provider', type: select, proxies: [Direct, Proxy], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Airport.png'} # 用于控制配置资源更新的策略组
+  - {name: 'Provider', type: select, proxies: [Direct, Proxy], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Loop.png'} # 用于控制资源更新的策略组
 
-  - {name: 'Prov¹', type: select, proxies: [Auto¹, Fallback¹, HK auto¹, JP auto¹, SG auto¹, US auto¹, HK rrobin¹, JP rrobin¹, SG rrobin¹, US rrobin¹], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Direct.png'}
-  - {name: 'Prov²', type: select, proxies: [Auto², Fallback², HK auto², JP auto², SG auto², US auto², HK rrobin², JP rrobin², SG rrobin², US rrobin²], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Direct.png'}
-  - {name: 'Prov³', type: select, proxies: [Auto³, Fallback³, HK auto³, JP auto³, SG auto³, US auto³, HK rrobin³, JP rrobin³, SG rrobin³, US rrobin³], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Direct.png'}
-  - {name: 'Prov⁴', type: select, proxies: [Auto⁴, Fallback⁴, HK auto⁴, JP auto⁴, SG auto⁴, US auto⁴, HK rrobin⁴, JP rrobin⁴, SG rrobin⁴, US rrobin⁴], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Direct.png'}
+  - {name: 'Subscription¹', type: select, proxies: [Auto¹, Fallback¹, HK ut¹, TW ut¹, JP ut¹, KR ut¹, SG ut¹, US ut¹, HK lb¹, TW lb¹, JP lb¹, KR lb¹, SG lb¹, US lb¹], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Direct.png'}
+  - {name: 'Subscription²', type: select, proxies: [Auto², Fallback², HK ut², TW ut², JP ut², KR ut², SG ut², US ut², HK lb², TW lb², JP lb², KR lb², SG lb², US lb²], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Direct.png'}
+  - {name: 'Subscription³', type: select, proxies: [Auto³, Fallback³, HK ut³, TW ut³, JP ut³, KR ut³, SG ut³, US ut³, HK lb³, TW lb³, JP lb³, KR lb³, SG lb³, US lb³], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Direct.png'}
+  - {name: 'Subscription⁴', type: select, proxies: [Auto⁴, Fallback⁴, HK ut⁴, TW ut⁴, JP ut⁴, KR ut⁴, SG ut⁴, US ut⁴, HK lb⁴, TW lb⁴, JP lb⁴, KR lb⁴, SG lb⁴, US lb⁴], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Direct.png'}
 
+  - {name: 'Auto¹', <<: [*url_test, *filter_exclude_back], use: [Provider_1], hidden: true}
+  - {name: 'Fallback¹', <<: [*fallback, *filter_exclude_back], use: [Provider_1], hidden: true}
+  - {name: 'Auto²', <<: [*url_test, *filter_exclude_back], use: [Provider_2], hidden: true}
+  - {name: 'Fallback²', <<: [*fallback, *filter_exclude_back], use: [Provider_2], hidden: true}
+  - {name: 'Auto³', <<: [*url_test, *filter_exclude_back], use: [Provider_3], hidden: true}
+  - {name: 'Fallback³', <<: [*fallback, *filter_exclude_back], use: [Provider_3], hidden: true}
+  - {name: 'Auto⁴', <<: [*url_test, *filter_exclude_back], use: [Provider_4], hidden: true}
+  - {name: 'Fallback⁴', <<: [*fallback, *filter_exclude_back], use: [Provider_4], hidden: true}
 
+  - {name: 'HK ut¹', <<: [*url_test, *filter_HK], use: [Provider_1], hidden: true}
+  - {name: 'HK ut²', <<: [*url_test, *filter_HK], use: [Provider_2], hidden: true}
+  - {name: 'HK ut³', <<: [*url_test, *filter_HK], use: [Provider_3], hidden: true}
+  - {name: 'HK ut⁴', <<: [*url_test, *filter_HK], use: [Provider_4], hidden: true}
 
-rule-providers-anchor: # 锚点 如合并时有重复的项, 则不会去合并; 锚点名不能包含特殊字符
+  - {name: 'TW ut¹', <<: [*url_test, *filter_TW], use: [Provider_1], hidden: true}
+  - {name: 'TW ut²', <<: [*url_test, *filter_TW], use: [Provider_2], hidden: true}
+  - {name: 'TW ut³', <<: [*url_test, *filter_TW], use: [Provider_3], hidden: true}
+  - {name: 'TW ut⁴', <<: [*url_test, *filter_TW], use: [Provider_4], hidden: true}
+
+  - {name: 'JP ut¹', <<: [*url_test, *filter_JP], use: [Provider_1], hidden: true}
+  - {name: 'JP ut²', <<: [*url_test, *filter_JP], use: [Provider_2], hidden: true}
+  - {name: 'JP ut³', <<: [*url_test, *filter_JP], use: [Provider_3], hidden: true}
+  - {name: 'JP ut⁴', <<: [*url_test, *filter_JP], use: [Provider_4], hidden: true}
+
+  - {name: 'KR ut¹', <<: [*url_test, *filter_KR], use: [Provider_1], hidden: true}
+  - {name: 'KR ut²', <<: [*url_test, *filter_KR], use: [Provider_2], hidden: true}
+  - {name: 'KR ut³', <<: [*url_test, *filter_KR], use: [Provider_3], hidden: true}
+  - {name: 'KR ut⁴', <<: [*url_test, *filter_KR], use: [Provider_4], hidden: true}
+
+  - {name: 'SG ut¹', <<: [*url_test, *filter_SG], use: [Provider_1], hidden: true}
+  - {name: 'SG ut²', <<: [*url_test, *filter_SG], use: [Provider_2], hidden: true}
+  - {name: 'SG ut³', <<: [*url_test, *filter_SG], use: [Provider_3], hidden: true}
+  - {name: 'SG ut⁴', <<: [*url_test, *filter_SG], use: [Provider_4], hidden: true}
+
+  - {name: 'US ut¹', <<: [*url_test, *filter_US], use: [Provider_1], hidden: true}
+  - {name: 'US ut²', <<: [*url_test, *filter_US], use: [Provider_2], hidden: true}
+  - {name: 'US ut³', <<: [*url_test, *filter_US], use: [Provider_3], hidden: true}
+  - {name: 'US ut⁴', <<: [*url_test, *filter_US], use: [Provider_4], hidden: true}
+
+  - {name: 'HK lb¹', <<: [*load_balance, *filter_HK], use: [Provider_1], hidden: true}
+  - {name: 'HK lb²', <<: [*load_balance, *filter_HK], use: [Provider_2], hidden: true}
+  - {name: 'HK lb³', <<: [*load_balance, *filter_HK], use: [Provider_3], hidden: true}
+  - {name: 'HK lb⁴', <<: [*load_balance, *filter_HK], use: [Provider_4], hidden: true}
+
+  - {name: 'TW lb¹', <<: [*load_balance, *filter_TW], use: [Provider_1], hidden: true}
+  - {name: 'TW lb²', <<: [*load_balance, *filter_TW], use: [Provider_2], hidden: true}
+  - {name: 'TW lb³', <<: [*load_balance, *filter_TW], use: [Provider_3], hidden: true}
+  - {name: 'TW lb⁴', <<: [*load_balance, *filter_TW], use: [Provider_4], hidden: true}
+ 
+  - {name: 'JP lb¹', <<: [*load_balance, *filter_JP], use: [Provider_1], hidden: true}
+  - {name: 'JP lb²', <<: [*load_balance, *filter_JP], use: [Provider_2], hidden: true}
+  - {name: 'JP lb³', <<: [*load_balance, *filter_JP], use: [Provider_3], hidden: true}
+  - {name: 'JP lb⁴', <<: [*load_balance, *filter_JP], use: [Provider_4], hidden: true}
+
+  - {name: 'KR lb¹', <<: [*load_balance, *filter_KR], use: [Provider_1], hidden: true}
+  - {name: 'KR lb²', <<: [*load_balance, *filter_KR], use: [Provider_2], hidden: true}
+  - {name: 'KR lb³', <<: [*load_balance, *filter_KR], use: [Provider_3], hidden: true}
+  - {name: 'KR lb⁴', <<: [*load_balance, *filter_KR], use: [Provider_4], hidden: true}
+
+  - {name: 'SG lb¹', <<: [*load_balance, *filter_SG], use: [Provider_1], hidden: true}
+  - {name: 'SG lb²', <<: [*load_balance, *filter_SG], use: [Provider_2], hidden: true}
+  - {name: 'SG lb³', <<: [*load_balance, *filter_SG], use: [Provider_3], hidden: true}
+  - {name: 'SG lb⁴', <<: [*load_balance, *filter_SG], use: [Provider_4], hidden: true}
+
+  - {name: 'US lb¹', <<: [*load_balance, *filter_US], use: [Provider_1], hidden: true}
+  - {name: 'US lb²', <<: [*load_balance, *filter_US], use: [Provider_2], hidden: true}
+  - {name: 'US lb³', <<: [*load_balance, *filter_US], use: [Provider_3], hidden: true}
+  - {name: 'US lb⁴', <<: [*load_balance, *filter_US], use: [Provider_4], hidden: true}
+
+  - {name: '以太网 + WLAN', <<: *load_balance, proxies: [以太网, WLAN], hidden: true}
+  - {name: 'wlan0 + wlan1', <<: *load_balance, proxies: [wlan0, wlan1], hidden: true}
+  - {name: 'data0 + wlan0', <<: *load_balance, proxies: [rmnet_data0, wlan0], hidden: true}
+  - {name: 'data0 + wlan1', <<: *load_balance, proxies: [rmnet_data0, wlan1], hidden: true}
+  - {name: 'data1 + wlan0', <<: *load_balance, proxies: [rmnet_data1, wlan0], hidden: true}
+  - {name: 'data1 + wlan1', <<: *load_balance, proxies: [rmnet_data1, wlan1], hidden: true}
+  - {name: 'data2 + wlan0', <<: *load_balance, proxies: [rmnet_data2, wlan0], hidden: true}
+  - {name: 'data2 + wlan1', <<: *load_balance, proxies: [rmnet_data2, wlan1], hidden: true}
+  - {name: 'data3 + wlan0', <<: *load_balance, proxies: [rmnet_data3, wlan0], hidden: true}
+  - {name: 'data3 + wlan1', <<: *load_balance, proxies: [rmnet_data3, wlan1], hidden: true}
+
+  - {name: 'Auto', <<: [*url_test, *filter_exclude_back], include-all-providers: true, hidden: true}
+  - {name: 'Fallback', <<: [*fallback, *filter_exclude_back], include-all-providers: true, hidden: true}
+  - {name: 'Load Balance', <<: [*load_balance, *filter_exclude_back], include-all-providers: true, hidden: true}
+
+rule-providers-anchor: # 锚点 如合并时有重复的项, 则不会去合并; 锚点名尽量不要含特殊字符
   rule_domain: &rule_domain {type: http, behavior: domain, format: mrs, proxy: Provider}
   rule_ipcidr: &rule_ipcidr {type: http, behavior: ipcidr, format: mrs, proxy: Provider}
   rule_classical: &rule_classical {type: http, behavior: classical, format: yaml, proxy: Provider}
@@ -314,10 +334,6 @@ rule-providers: # 利用规则集合, 可以在较低资源占用情况下引用
     <<: *rule_domain
     path: './rule_providers/domain/google'
     url: 'https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/google.mrs'
-  site_alibaba:
-    <<: *rule_domain
-    path: './rule_providers/domain/alibaba'
-    url: 'https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/alibaba.mrs'
   site_tencent:
     <<: *rule_domain
     path: './rule_providers/domain/tencent'
@@ -359,7 +375,7 @@ rule-providers: # 利用规则集合, 可以在较低资源占用情况下引用
 sub-rules: # 子规则 匹配到 sub-rules 时, 未命中则使用 rules
 
 rules: # 分流规则可以直接引用代理或策略组, 但不能引用远程代理集; 对于每一条连接, 总是从上到下匹配规则; 需要复杂条件时, 可以用逻辑运算符去组合多个规则. 并且逻辑规则是可以相互嵌套的
-  - 'DST-PORT,53,dns-hijacking' # 劫持 DNS 到 Clash 内部 DNS 模块
+  - 'DST-PORT,53,DNS Hijacking' # 劫持 DNS 到 Clash 内部 DNS 模块
   - 'RULE-SET,AdGuard_DNS_filter,REJECT-DROP' # 需要拦截的广告 大部分情况可能出现误杀
   - 'AND,((NETWORK,udp),(DST-PORT,443),(NOT,((OR,(RULE-SET,site_cn),(RULE-SET,ip_cn))))),QUIC' # 国内以外的 QUIC
   - 'AND,((NETWORK,udp),(DST-PORT,443/19302/3478/5349/49152-65535),(OR,(DOMAIN-KEYWORD,stun),(DOMAIN-KEYWORD,turn))),Privacy' # 是否禁用 stun/turn 协议的 udp 数据，禁用后可以有效解决 webrtc 的 ip 泄露
@@ -372,8 +388,8 @@ rules: # 分流规则可以直接引用代理或策略组, 但不能引用远程
   - 'OR,((RULE-SET,site_netflix),(RULE-SET,ip_netflix)),Netflix' # 奈飞 
   - 'OR,((RULE-SET,site_google),(RULE-SET,ip_google)),Proxy' # 谷歌
   - 'OR,((RULE-SET,site_tencent),(IP-ASN,45090),(IP-ASN,132203)),Direct' # 腾讯
-  - 'OR,((RULE-SET,site_geolocation-!cn),(RULE-SET,ip_cloudflare)),Proxy' # 国外常见域名/ip
-  - 'OR,((RULE-SET,site_cn),(RULE-SET,ip_cn)),Direct' # 部分 cn 域名/ip 
+  - 'OR,((RULE-SET,site_geolocation-!cn),(RULE-SET,ip_cloudflare)),Proxy' # 国外常见域名/ip  cn 参杂了 geolocation-!cn
+  - 'OR,((RULE-SET,site_cn),(RULE-SET,ip_cn)),Direct' # 部分 cn 域名/ip
   - 'MATCH,Proxy' # 匹配所有请求, 无需条件
 
 #################### END ####################
