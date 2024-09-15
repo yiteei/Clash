@@ -1,4 +1,4 @@
-#!MANAGED-CONFIG https://gist.githubusercontent.com/x/x/raw/x.yaml
+#!MANAGED-CONFIG https://gist.githubusercontent.com/yiteei/a32798012c3159064b896aa0f7664a2e/raw/clash.yaml
 #################### START ####################
 mode: 'rule' # 运行模式 rule/global/direct, 暂不支持 script
 log-level: 'debug' # 日志级别 silent/error/warning/info/debug
@@ -30,11 +30,11 @@ secret: 'clash' # API 的访问密钥
 
 
 
-port: 0 # http/socks/mixed 端口验证与外部访问
-socks-port: 0 # socks4/4a/5 代理端口
-redir-port: 0 # redirect 透明代理端口, 仅能代理 TCP 流量
-tproxy-port: 0 # tproxy 透明代理端口, 可代理 TCP 与 UDP 流量
-mixed-port: 7890 # 混合端口 同时支持 HTTP(S) 和 SOCKS5 协议
+port: 5551 # http/socks/mixed 端口验证与外部访问
+socks-port: 5552 # socks4/4a/5 代理端口
+redir-port: 5553 # redirect 透明代理端口, 仅能代理 TCP 流量
+tproxy-port: 5554 # tproxy 透明代理端口, 可代理 TCP 与 UDP 流量
+mixed-port: 5555 # 混合端口 同时支持 HTTP(S) 和 SOCKS5 协议
 
 tun:
   enable: true # 是否启用
@@ -70,13 +70,17 @@ dns: # DNS 服务器书写规范应带引号, 以防出现特殊字符
   enhanced-mode: 'redir-host' # DNS 处理模式 fake-ip/redir-host(Meta 回滚了 Redir Host 部分代码, 仍然保留 Clash v1.70 以前的 Redir Host 模式的域名传递行为)/normal
   nameserver: # 默认域名解析, 如不配置 fallback/proxy-server-nameserver, 则都由 nameserver 解析
     - 'https://1.0.0.1/dns-query#Proxy' # Cloudflare DNS
+    - 'https://8.8.4.4/dns-query#Proxy' # Google DNS
   proxy-server-nameserver: # 用于节点域名解析 如其他 DNS 需过代理查询/nameserver 为国外 DNS 则配置该项以防出现鸡蛋问题
     - 'https://223.6.6.6/dns-query' # Alibaba DNS
+    - 'https://120.53.53.53/dns-query' # Tencent DNS
   nameserver-policy: # 指定的解析服务, 没匹配到使用 nameserver/fallback 并发查询
     'rule-set:site_geolocation-!cn': # 'cn' 里参杂了 'geolocation-!cn', 强制国外 DNS 解析
       - 'https://1.0.0.1/dns-query#Proxy'
+      - 'https://8.8.4.4/dns-query#Proxy'
     'rule-set:site_private,site_cn':
       - 'https://223.6.6.6/dns-query'
+      - 'https://120.53.53.53/dns-query'
 
 
 sniffer: # Sniffer 域名嗅器 通过读取握手包内的域名字段, 将 IP 还原成域名
@@ -135,7 +139,7 @@ proxy-providers-anchor: # 锚点 如合并时有重复的项, 则不会去合并
 proxy-providers: # 支持直接使用 V2rayN 等客户端的普通订阅; 一个合法的远程代理集必须包含 proxies 字段, 远程代理集为空时会以 DIRECT 替代
   Provider_1: # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http # 必须, provider 类型 http/file
-    url: '' # 此行单引号内填入你的订阅链接
+    url: 'http://127.0.0.1:3000/download/collection/Provider_1' # 此行单引号内填入你的订阅链接
     <<: [*health_check, *header, *update, *filter_exclude_ad]
     override:
       <<: *override
@@ -144,7 +148,7 @@ proxy-providers: # 支持直接使用 V2rayN 等客户端的普通订阅; 一个
 
   Provider_2: # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http
-    url: '' # 此行单引号内填入你的订阅链接
+    url: 'http://127.0.0.1:3000/download/Chicken%20Run' # 此行单引号内填入你的订阅链接
     <<: [*health_check, *header, *update, *filter_exclude_ad]
     override:
       <<: *override
@@ -153,7 +157,7 @@ proxy-providers: # 支持直接使用 V2rayN 等客户端的普通订阅; 一个
 
   Provider_3: # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http
-    url: '' # 此行单引号内填入你的订阅链接
+    url: 'http://127.0.0.1:3000/download/Free%20Cloud' # 此行单引号内填入你的订阅链接
     <<: [*health_check, *header, *update, *filter_exclude_ad]
     override:
       <<: *override
@@ -213,6 +217,7 @@ proxy-groups: # 策略组可以包含多个代理, 或多个远程代理集; 不
   - {name: 'Netflix', <<: [*fallback_netflix, *proxies_proxy], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Netflix.png'}
   - {name: 'Torrent', type: select, <<: [*proxies_direct, *filter_LU], include-all-providers: true, icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Server.png'}
   - {name: 'Privacy', type: select, proxies: [REJECT-DROP, PASS], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Hijacking.png'}
+  - {name: 'Advertise', type: select, proxies: [REJECT-DROP, PASS], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Advertising.png'}
   - {name: 'Recreation', type: select, <<: [*proxies_direct], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Game.png'}
 
   - {name: 'Provider', type: select, proxies: [Direct, Proxy], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Stack.png'} # 用于控制资源更新的策略组
@@ -319,14 +324,19 @@ rule-providers-anchor: # 锚点 如合并时有重复的项, 则不会去合并;
   rule_classical: &rule_classical {type: http, behavior: classical, format: yaml, proxy: Provider}
 
 rule-providers: # 利用规则集合, 可以在较低资源占用情况下引用大量规则; domain/ipcidr 类规则集, 比 classical 类规则集匹配更高效
-  AdGuard_DNS_filter:
-    <<: *rule_classical
-    path: './rule_providers/classical/AdGuard_DNS_filter'
-    url: 'https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/AdGuardSDNSFilter/AdGuardSDNSFilter_Classical.yaml'
-  site_category-httpdns:
+  site_dns-blocklists:
+    format: text
     <<: *rule_domain
-    path: './rule_providers/domain/category-httpdns'
-    url: 'https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-httpdns.mrs'
+    path: './rule_providers/domain/dns-blocklists'
+    url: 'https://cdn.jsdelivr.net/gh//hagezi/dns-blocklists@master/domains/light.txt'
+  site_httpdns:
+    <<: *rule_domain
+    path: './rule_providers/domain/httpdns'
+    url: 'https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/httpdns.mrs'
+  site_category-httpdns-cn:
+    <<: *rule_domain
+    path: './rule_providers/domain/category-httpdns-cn'
+    url: 'https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-httpdns-cn.mrs'
   site_private:
     <<: *rule_domain
     path: './rule_providers/domain/private'
@@ -405,11 +415,11 @@ sub-rules: # 子规则 匹配到 sub-rules 时, 未命中则使用 rules
 
 rules: # 分流规则可以直接引用代理或策略组, 但不能引用远程代理集; 对于每一条连接, 总是从上到下匹配规则; 需要复杂条件时, 可以用逻辑运算符去组合多个规则. 并且逻辑规则是可以相互嵌套的
   - 'DST-PORT,53,DNS Hijacking' # 劫持 DNS 到 Clash 内部 DNS 模块
-  - 'RULE-SET,AdGuard_DNS_filter,REJECT-DROP' # 需要拦截的广告 大部分情况可能出现误杀
+  - 'RULE-SET,site_dns-blocklists,Advertise' # 需要拦截的广告 大部分情况可能出现误杀
   - 'AND,((NETWORK,udp),(DST-PORT,443),(NOT,((OR,(RULE-SET,site_cn),(RULE-SET,ip_cn))))),QUIC' # 国内以外的 QUIC
   - 'AND,((NETWORK,udp),(DST-PORT,443/19302/3478/5349/49152-65535),(OR,(DOMAIN-KEYWORD,stun),(DOMAIN-KEYWORD,turn))),Privacy' # 是否禁用 stun/turn 协议的 udp 数据，禁用后可以有效解决 webrtc 的 ip 泄露
   - 'AND,((DST-PORT,5228-5230),(RULE-SET,site_googlefcm)),Google' # Google FCM 直连确保 DNS 无污染/劫持
-  - 'OR,((RULE-SET,site_category-httpdns),(DOMAIN-KEYWORD,httpdns)),REJECT-DROP' # 拦截 httpdns 服务, 以确保这些请求能够在 Clash 的 DNS 框架下工作
+  - 'OR,((RULE-SET,site_httpdns),(RULE-SET,site_category-httpdns-cn),(DOMAIN-KEYWORD,httpdns)),REJECT-DROP' # 拦截 httpdns 服务, 以确保这些请求能够在 Clash 的 DNS 框架下工作
   - 'OR,((RULE-SET,site_private),(RULE-SET,ip_private,no-resolve)),Direct' # 局域网..
   - 'OR,((RULE-SET,site_category-public-tracker),(RULE-SET,site_category-pt)),Torrent' # 种子
   - 'OR,((RULE-SET,site_category-games@cn),(RULE-SET,site_category-games@cn)),Recreation' # 游戏相关部分 cn 域名
