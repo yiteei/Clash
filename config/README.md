@@ -2,8 +2,8 @@
 这份配置文件为本人使用而设计的 [Clash Meta](https://github.com/MetaCubeX/mihomo) 核心配置，旨在满足本人日常使用需求。
 
 #### 代理工具：
-> - **[Mihomo Party](https://github.com/pompurin404/mihomo-party/releases):** 大部分功能GUI化，支持策略组隐藏/图标。
-> - **[FlClash](https://github.com/chen08209/FlClash/releases):** 拉但在更新，支持策略组隐藏，暂不支持策略组图标。
+> - **[Mihomo Party](https://github.com/pompurin404/mihomo-party/releases):** 大部分功能GUI化，支持 Sub-Store ，策略组图标 及 策略组隐藏。
+> - **[FlClash](https://github.com/chen08209/FlClash/releases):** 支持策略组隐藏，暂不支持策略组图标。
 
 #### 主要功能：
 > - **分流管理:** 确保必要的流量直连，其他流量通过代理处理。
