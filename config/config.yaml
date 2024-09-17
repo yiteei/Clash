@@ -1,4 +1,4 @@
-#!MANAGED-CONFIG https://gist.githubusercontent.com/yiteei/a32798012c3159064b896aa0f7664a2e/raw/clash.yaml
+#!MANAGED-CONFIG https://gist.githubusercontent.com/yiteei//raw/.yaml
 #################### START ####################
 mode: 'rule' # 运行模式 rule/global/direct, 暂不支持 script
 log-level: 'debug' # 日志级别 silent/error/warning/info/debug
@@ -30,11 +30,11 @@ secret: 'clash' # API 的访问密钥
 
 
 
-port: 5551 # http/socks/mixed 端口验证与外部访问
-socks-port: 5552 # socks4/4a/5 代理端口
-redir-port: 5553 # redirect 透明代理端口, 仅能代理 TCP 流量
-tproxy-port: 5554 # tproxy 透明代理端口, 可代理 TCP 与 UDP 流量
-mixed-port: 5555 # 混合端口 同时支持 HTTP(S) 和 SOCKS5 协议
+port: 0 # http/socks/mixed 端口验证与外部访问
+socks-port: 0 # socks4/4a/5 代理端口
+redir-port: 0 # redirect 透明代理端口, 仅能代理 TCP 流量
+tproxy-port: 0 # tproxy 透明代理端口, 可代理 TCP 与 UDP 流量
+mixed-port: 7890 # 混合端口 同时支持 HTTP(S) 和 SOCKS5 协议
 
 tun:
   enable: true # 是否启用
@@ -68,19 +68,19 @@ dns: # DNS 服务器书写规范应带引号, 以防出现特殊字符
   use-system-hosts: false # 是否查询系统 hosts, 默认 true
   respect-rules: false # dns 连接跟随 rule, 需配置 proxy-server-nameserver
   enhanced-mode: 'redir-host' # DNS 处理模式 fake-ip/redir-host(Meta 回滚了 Redir Host 部分代码, 仍然保留 Clash v1.70 以前的 Redir Host 模式的域名传递行为)/normal
-  nameserver: # 默认域名解析, 如不配置 fallback/proxy-server-nameserver, 则都由 nameserver 解析
-    - 'https://1.0.0.1/dns-query#Proxy' # Cloudflare DNS
-    - 'https://8.8.4.4/dns-query#Proxy' # Google DNS
-  proxy-server-nameserver: # 用于节点域名解析 如其他 DNS 需过代理查询/nameserver 为国外 DNS 则配置该项以防出现鸡蛋问题
-    - 'https://223.6.6.6/dns-query' # Alibaba DNS
-    - 'https://120.53.53.53/dns-query' # Tencent DNS
   nameserver-policy: # 指定的解析服务, 没匹配到使用 nameserver/fallback 并发查询
     'rule-set:site_geolocation-!cn': # 'cn' 里参杂了 'geolocation-!cn', 强制国外 DNS 解析
-      - 'https://1.0.0.1/dns-query#Proxy'
-      - 'https://8.8.4.4/dns-query#Proxy'
+      - 'https://1.0.0.1/dns-query#Proxy&ecs=1.0.0.1/24&ecs-override=true' # Cloudflare DNS
+      - 'https://8.8.4.4/dns-query#Proxy&ecs=8.8.4.4/24&ecs-override=true' # Google DNS
     'rule-set:site_private,site_cn':
       - 'https://223.6.6.6/dns-query'
       - 'https://120.53.53.53/dns-query'
+  nameserver: # 默认域名解析, 如不配置 fallback/proxy-server-nameserver, 则都由 nameserver 解析
+    - 'https://1.0.0.1/dns-query#Proxy&ecs=1.0.0.1/24&ecs-override=true'
+    - 'https://8.8.4.4/dns-query#Proxy&ecs=8.8.4.4/24&ecs-override=true'
+  proxy-server-nameserver: # 用于节点域名解析 如其他 DNS 需过代理查询/nameserver 为国外 DNS 则配置该项以防出现鸡蛋问题
+    - 'https://223.6.6.6/dns-query' # Alibaba DNS
+    - 'https://120.53.53.53/dns-query' # Tencent DNS
 
 
 sniffer: # Sniffer 域名嗅器 通过读取握手包内的域名字段, 将 IP 还原成域名
@@ -95,10 +95,6 @@ sniffer: # Sniffer 域名嗅器 通过读取握手包内的域名字段, 将 IP 
       ports: [443, 8443]
     QUIC:
       ports: [443, 8443]
-  skip-src-address: # 对于来源 ip 跳过嗅探
-    - '192.168.0.1/32'
-  skip-dst-address: # 对于目标 ip 跳过嗅探
-    - '192.168.0.1/32'
   skip-domain: # 需要跳过嗅探的域名, 主要解决部分站点 sni 字段非域名, 导致嗅探结果异常的问题, 如米家设备
     - '+.push.apple.com'
     - 'Mijia Cloud'
@@ -139,7 +135,7 @@ proxy-providers-anchor: # 锚点 如合并时有重复的项, 则不会去合并
 proxy-providers: # 支持直接使用 V2rayN 等客户端的普通订阅; 一个合法的远程代理集必须包含 proxies 字段, 远程代理集为空时会以 DIRECT 替代
   Provider_1: # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http # 必须, provider 类型 http/file
-    url: 'http://127.0.0.1:3000/download/collection/Provider_1' # 此行单引号内填入你的订阅链接
+    url: 'http://127.0.0.1:3000/download/collection/Provider_Paid' # 此行单引号内填入你的订阅链接
     <<: [*health_check, *header, *update, *filter_exclude_ad]
     override:
       <<: *override
@@ -148,7 +144,7 @@ proxy-providers: # 支持直接使用 V2rayN 等客户端的普通订阅; 一个
 
   Provider_2: # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http
-    url: 'http://127.0.0.1:3000/download/Chicken%20Run' # 此行单引号内填入你的订阅链接
+    url: 'http://127.0.0.1:3000/download/collection/Provider_Free' # 此行单引号内填入你的订阅链接
     <<: [*health_check, *header, *update, *filter_exclude_ad]
     override:
       <<: *override
@@ -157,7 +153,7 @@ proxy-providers: # 支持直接使用 V2rayN 等客户端的普通订阅; 一个
 
   Provider_3: # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http
-    url: 'http://127.0.0.1:3000/download/Free%20Cloud' # 此行单引号内填入你的订阅链接
+    url: '' # 此行单引号内填入你的订阅链接
     <<: [*health_check, *header, *update, *filter_exclude_ad]
     override:
       <<: *override
@@ -197,8 +193,8 @@ proxy-groups-anchor: # 锚点 如合并时有重复的项, 则不会去合并; �
   # - filter_DE: &filter_DE {filter: '^(?=.*((?i)🇩🇪|德国|(\b(DE|Germany)\b))).*$'}
   - filter_LU: &filter_LU {filter: '^(?=.*((?i)🇱🇺|卢森堡|(\b(LU|Luxembourg|BT|PT)\b))).*$'} # 种子专用
 
-  - proxies_proxy: &proxies_proxy {proxies: [Proxy, Direct, Fallback, Load Balance, Subscription¹, Subscription², Subscription³, Subscription⁴]}
-  - proxies_direct: &proxies_direct {proxies: [Direct, Proxy, Fallback, Load Balance, Subscription¹, Subscription², Subscription³, Subscription⁴]}
+  - proxies_proxy: &proxies_proxy {proxies: [Proxy, Alive, Random, Direct, Subscription¹, Subscription², Subscription³, Subscription⁴]}
+  - proxies_direct: &proxies_direct {proxies: [Direct, Alive, Random, Proxy, Subscription¹, Subscription², Subscription³, Subscription⁴]}
 
   - url_test: &url_test {type: url-test, expected-status: '204/200', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 15, tolerance: 5}
 
@@ -209,7 +205,7 @@ proxy-groups-anchor: # 锚点 如合并时有重复的项, 则不会去合并; �
   - load_balance: &load_balance {type: load-balance, strategy: round-robin, expected-status: '204/200', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 15}
 
 proxy-groups: # 策略组可以包含多个代理, 或多个远程代理集; 不包含任何代理的策略组, 会被当作为 DIRECT 策略处理; 如策略组代理来自远程代理集时, 则使用该来源的 health-check
-  - {name: 'Proxy', type: select, <<: [*url_test], proxies: [Auto, Direct, Magnification, Subscription¹, Subscription², Subscription³, Subscription⁴], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Final.png'}
+  - {name: 'Proxy', type: select, <<: [*url_test], proxies: [Delay, Alive, Random, Direct, Magnification, Subscription¹, Subscription², Subscription³, Subscription⁴], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Final.png'}
   - {name: 'Direct', type: select, proxies: [Default, 以太网 + WLAN, wlan0 + wlan1, data0 + wlan0, data0 + wlan1, data1 + wlan0, data1 + wlan1, data2 + wlan0, data2 + wlan1, data3 + wlan0, data3 + wlan1], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China_Map.png'}
   - {name: 'LLModel', <<: [*fallback_llmodel, *proxies_proxy], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/ChatGPT.png'}
   - {name: 'Google', type: select, <<: [*proxies_direct], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png'}
@@ -222,30 +218,31 @@ proxy-groups: # 策略组可以包含多个代理, 或多个远程代理集; 不
 
   - {name: 'Provider', type: select, proxies: [Direct, Proxy], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Stack.png'} # 用于控制资源更新的策略组
   - {name: 'Magnification', type: select, proxies: [0x, 0.1x, 0.5x, 0.8x], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Speedtest.png'}
-  - {name: 'Subscription¹', type: select, proxies: [Auto¹, Fallback¹, 香港 ut¹, 台湾 ut¹, 日本 ut¹, 韩国 ut¹, 狮城 ut¹, 美国 ut¹, 香港 lb¹, 台湾 lb¹, 日本 lb¹, 韩国 lb¹, 狮城 lb¹, 美国 lb¹], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png'}
-  - {name: 'Subscription²', type: select, proxies: [Auto², Fallback², 香港 ut², 台湾 ut², 日本 ut², 韩国 ut², 狮城 ut², 美国 ut², 香港 lb², 台湾 lb², 日本 lb², 韩国 lb², 狮城 lb², 美国 lb²], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png'}
-  - {name: 'Subscription³', type: select, proxies: [Auto³, Fallback³, 香港 ut³, 台湾 ut³, 日本 ut³, 韩国 ut³, 狮城 ut³, 美国 ut³, 香港 lb³, 台湾 lb³, 日本 lb³, 韩国 lb³, 狮城 lb³, 美国 lb³], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png'}
-  - {name: 'Subscription⁴', type: select, proxies: [Auto⁴, Fallback⁴, 香港 ut⁴, 台湾 ut⁴, 日本 ut⁴, 韩国 ut⁴, 狮城 ut⁴, 美国 ut⁴, 香港 lb⁴, 台湾 lb⁴, 日本 lb⁴, 韩国 lb⁴, 狮城 lb⁴, 美国 lb⁴], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png'}
+  - {name: 'Subscription¹', type: select, proxies: [Delay¹, Alive¹, 香港 ut¹, 台湾 ut¹, 日本 ut¹, 韩国 ut¹, 狮城 ut¹, 美国 ut¹, 香港 lb¹, 台湾 lb¹, 日本 lb¹, 韩国 lb¹, 狮城 lb¹, 美国 lb¹], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png'}
+  - {name: 'Subscription²', type: select, proxies: [Delay², Alive², 香港 ut², 台湾 ut², 日本 ut², 韩国 ut², 狮城 ut², 美国 ut², 香港 lb², 台湾 lb², 日本 lb², 韩国 lb², 狮城 lb², 美国 lb²], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png'}
+  - {name: 'Subscription³', type: select, proxies: [Delay³, Alive³, 香港 ut³, 台湾 ut³, 日本 ut³, 韩国 ut³, 狮城 ut³, 美国 ut³, 香港 lb³, 台湾 lb³, 日本 lb³, 韩国 lb³, 狮城 lb³, 美国 lb³], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png'}
+  - {name: 'Subscription⁴', type: select, proxies: [Delay⁴, Alive⁴, 香港 ut⁴, 台湾 ut⁴, 日本 ut⁴, 韩国 ut⁴, 狮城 ut⁴, 美国 ut⁴, 香港 lb⁴, 台湾 lb⁴, 日本 lb⁴, 韩国 lb⁴, 狮城 lb⁴, 美国 lb⁴], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png'}
 
   - {name: 'QUIC', type: select, proxies: [PASS, REJECT-DROP], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png'}
 
-  - {name: 'Auto', <<: [*url_test, *filter_exclude_back], include-all-providers: true, hidden: true}
   - {name: '0x', <<: [*url_test, *filter_0x], include-all-providers: true, hidden: true}
   - {name: '0.1x', <<: [*url_test, *filter_0.1x], include-all-providers: true, hidden: true}
   - {name: '0.5x', <<: [*url_test, *filter_0.5x], include-all-providers: true, hidden: true}
   - {name: '0.8x', <<: [*url_test, *filter_0.8x], include-all-providers: true, hidden: true}
-  - {name: 'Fallback', <<: [*fallback, *filter_exclude_back], include-all-providers: true, hidden: true}
-  - {name: 'Load Balance', <<: [*load_balance, *filter_exclude_back], include-all-providers: true, hidden: true}
 
-  - {name: 'Auto¹', <<: [*url_test, *filter_exclude_back], use: [Provider_1], hidden: true}
-  - {name: 'Auto²', <<: [*url_test, *filter_exclude_back], use: [Provider_2], hidden: true}
-  - {name: 'Auto³', <<: [*url_test, *filter_exclude_back], use: [Provider_3], hidden: true}
-  - {name: 'Auto⁴', <<: [*url_test, *filter_exclude_back], use: [Provider_4], hidden: true}
+  - {name: 'Delay', <<: [*url_test, *filter_exclude_back], include-all-providers: true, hidden: true}
+  - {name: 'Alive', <<: [*fallback, *filter_exclude_back], include-all-providers: true, hidden: true}
+  - {name: 'Random', <<: [*load_balance, *filter_exclude_back], include-all-providers: true, hidden: true}
 
-  - {name: 'Fallback¹', <<: [*fallback, *filter_exclude_back], use: [Provider_1], hidden: true}
-  - {name: 'Fallback²', <<: [*fallback, *filter_exclude_back], use: [Provider_2], hidden: true}
-  - {name: 'Fallback³', <<: [*fallback, *filter_exclude_back], use: [Provider_3], hidden: true}
-  - {name: 'Fallback⁴', <<: [*fallback, *filter_exclude_back], use: [Provider_4], hidden: true}
+  - {name: 'Delay¹', <<: [*url_test, *filter_exclude_back], use: [Provider_1], hidden: true}
+  - {name: 'Delay²', <<: [*url_test, *filter_exclude_back], use: [Provider_2], hidden: true}
+  - {name: 'Delay³', <<: [*url_test, *filter_exclude_back], use: [Provider_3], hidden: true}
+  - {name: 'Delay⁴', <<: [*url_test, *filter_exclude_back], use: [Provider_4], hidden: true}
+
+  - {name: 'Alive¹', <<: [*fallback, *filter_exclude_back], use: [Provider_1], hidden: true}
+  - {name: 'Alive²', <<: [*fallback, *filter_exclude_back], use: [Provider_2], hidden: true}
+  - {name: 'Alive³', <<: [*fallback, *filter_exclude_back], use: [Provider_3], hidden: true}
+  - {name: 'Alive⁴', <<: [*fallback, *filter_exclude_back], use: [Provider_4], hidden: true}
 
   - {name: '香港 ut¹', <<: [*url_test, *filter_HK], use: [Provider_1], hidden: true}
   - {name: '香港 ut²', <<: [*url_test, *filter_HK], use: [Provider_2], hidden: true}
@@ -361,6 +358,10 @@ rule-providers: # 利用规则集合, 可以在较低资源占用情况下引用
     <<: *rule_domain
     path: './rule_providers/domain/netflix'
     url: 'https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/netflix.mrs'
+  site_category-ai-chat-!cn:
+    <<: *rule_domain
+    path: './rule_providers/domain/category-ai-chat-!cn'
+    url: 'https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-ai-chat-!cn.mrs'
   site_openai:
     <<: *rule_domain
     path: './rule_providers/domain/openai'
@@ -417,7 +418,7 @@ rules: # 分流规则可以直接引用代理或策略组, 但不能引用远程
   - 'DST-PORT,53,DNS Hijacking' # 劫持 DNS 到 Clash 内部 DNS 模块
   - 'RULE-SET,site_dns-blocklists,Advertise' # 需要拦截的广告 大部分情况可能出现误杀
   - 'AND,((NETWORK,udp),(DST-PORT,443),(NOT,((OR,(RULE-SET,site_cn),(RULE-SET,ip_cn))))),QUIC' # 国内以外的 QUIC
-  - 'AND,((NETWORK,udp),(DST-PORT,443/19302/3478/5349/49152-65535),(OR,(DOMAIN-KEYWORD,stun),(DOMAIN-KEYWORD,turn))),Privacy' # 是否禁用 stun/turn 协议的 udp 数据，禁用后可以有效解决 webrtc 的 ip 泄露
+  - 'AND,((NETWORK,udp),(OR,(DOMAIN-KEYWORD,stun),(DOMAIN-KEYWORD,turn))),Privacy' # 是否禁用 stun/turn 协议的 udp 数据，禁用后可以有效解决 webrtc 的 ip 泄露
   - 'AND,((DST-PORT,5228-5230),(RULE-SET,site_googlefcm)),Google' # Google FCM 直连确保 DNS 无污染/劫持
   - 'OR,((RULE-SET,site_httpdns),(RULE-SET,site_category-httpdns-cn),(DOMAIN-KEYWORD,httpdns)),REJECT-DROP' # 拦截 httpdns 服务, 以确保这些请求能够在 Clash 的 DNS 框架下工作
   - 'OR,((RULE-SET,site_private),(RULE-SET,ip_private,no-resolve)),Direct' # 局域网..
@@ -425,7 +426,7 @@ rules: # 分流规则可以直接引用代理或策略组, 但不能引用远程
   - 'OR,((RULE-SET,site_category-games@cn),(RULE-SET,site_category-games@cn)),Recreation' # 游戏相关部分 cn 域名
   - 'OR,((RULE-SET,site_telegram),(RULE-SET,ip_telegram)),TGram' # Telegram
   - 'OR,((RULE-SET,site_netflix),(RULE-SET,ip_netflix)),Netflix' # Netflix
-  - 'OR,((RULE-SET,site_openai),(IP-ASN,20473)),LLModel' # 语言模型
+  - 'OR,((RULE-SET,site_category-ai-chat-!cn),(RULE-SET,site_openai)),LLModel' # 语言模型
   - 'OR,((RULE-SET,site_google),(RULE-SET,ip_google)),Proxy' # Google
   - 'OR,((RULE-SET,site_tencent),(IP-ASN,45090),(IP-ASN,132203)),Direct' # 腾讯
   - 'OR,((RULE-SET,site_geolocation-!cn),(RULE-SET,ip_cloudflare)),Proxy' # 国外常见域名/ip  'cn' 参杂了 'geolocation-!cn'
