@@ -1,4 +1,4 @@
-#!MANAGED-CONFIG https://gist.githubusercontent.com/yiteei//raw/.yaml
+#!MANAGED-CONFIG https://gist.githubusercontent.com/yiteei/a32798012c3159064b896aa0f7664a2e/raw/clash.yaml
 #################### START ####################
 mode: 'rule' # 运行模式 rule/global/direct, 暂不支持 script
 log-level: 'debug' # 日志级别 silent/error/warning/info/debug
@@ -30,10 +30,10 @@ secret: 'clash' # API 的访问密钥
 
 
 
-port: 0 # http/socks/mixed 端口验证与外部访问
-socks-port: 0 # socks4/4a/5 代理端口
-redir-port: 0 # redirect 透明代理端口, 仅能代理 TCP 流量
-tproxy-port: 0 # tproxy 透明代理端口, 可代理 TCP 与 UDP 流量
+# port: 0 # http/socks/mixed 端口验证与外部访问
+# socks-port: 0 # socks4/4a/5 代理端口
+# redir-port: 0 # redirect 透明代理端口, 仅能代理 TCP 流量
+# tproxy-port: 0 # tproxy 透明代理端口, 可代理 TCP 与 UDP 流量
 mixed-port: 7890 # 混合端口 同时支持 HTTP(S) 和 SOCKS5 协议
 
 tun:
@@ -57,6 +57,7 @@ tun:
 
 
 hosts: # 支持单域名多 ip, 格式为数组; 支持域名通配符, 不使用通配符的域名优先级高于使用通配符的域名  Tip: 使用域名通配符的应该尽量用单引号包裹
+  'trpc.o3.*': [127.0.0.1] # 环境检测包（trpc.o3.*）拦截
 
 dns: # DNS 服务器书写规范应带引号, 以防出现特殊字符
   enable: true # 是否启用, 如为 false, 则使用系统 DNS 解析
@@ -126,7 +127,7 @@ proxies: # 出站配置 查看接口命令: netsh interface show interface  Tip:
   - {name: 'rmnet_data3', type: direct, udp: true, interface-name: 'rmnet_data3'}
 
 proxy-providers-anchor: # 锚点 如合并时有重复的项, 则不会去合并; 锚点名尽量不要含特殊字符
-  - health_check: &health_check {health-check: {enable: true, expected-status: '204/200', url: 'https://www.google.com/generate_204', interval: 15}} # 延迟检测
+  - health_check: &health_check {health-check: {enable: true, expected-status: '204', url: 'https://www.google.com/generate_204', interval: 25}} # 延迟检测
   - header: &header {header: {User-Agent: ['clash-verge', 'ClashMetaForAndroid', 'flclash', 'clash.meta', 'meta', 'mihomo', 'stash', 'ClashforWindows', 'ClashForAndroid', 'clash']}} # UA
   - update: &update {proxy: Provider, interval: 86400} # 更新 provider 使用的节点或策略组/更新 provider 的间隔, 单位 s  Tip: 设置的过于小可能被机场 ban
   - filter_exclude_ad: &filter_exclude_ad {filter: '^(?=.*(.))(?!.*((?i)群|邀请|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|导航|倒卖|防止|国内|地址|频道|无法|说明|使用|提示|特别|访问|支持|教程|关注|更新|作者|加入|(\b(USE|USED|TG|TOTAL|EXPIRE|EMAIL|Panel|Channel|Author)\b|(\d{4}-\d{2}-\d{2}|\d+G)))).*$'} # 引入筛选/排除, 使用筛选可能会在一定程度上增加CPU占用/转发延迟, 尤其是使用较为复杂正则的情况下
@@ -135,7 +136,7 @@ proxy-providers-anchor: # 锚点 如合并时有重复的项, 则不会去合并
 proxy-providers: # 支持直接使用 V2rayN 等客户端的普通订阅; 一个合法的远程代理集必须包含 proxies 字段, 远程代理集为空时会以 DIRECT 替代
   Provider_1: # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http # 必须, provider 类型 http/file
-    url: 'http://127.0.0.1:3000/download/collection/Provider_Paid' # 此行单引号内填入你的订阅链接
+    url: 'http://127.0.0.1:38324/download/collection/Provider_Paid' # 此行单引号内填入你的订阅链接
     <<: [*health_check, *header, *update, *filter_exclude_ad]
     override:
       <<: *override
@@ -144,7 +145,7 @@ proxy-providers: # 支持直接使用 V2rayN 等客户端的普通订阅; 一个
 
   Provider_2: # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http
-    url: 'http://127.0.0.1:3000/download/collection/Provider_Free' # 此行单引号内填入你的订阅链接
+    url: 'http://127.0.0.1:38324/download/collection/Provider_Free' # 此行单引号内填入你的订阅链接
     <<: [*health_check, *header, *update, *filter_exclude_ad]
     override:
       <<: *override
@@ -196,13 +197,13 @@ proxy-groups-anchor: # 锚点 如合并时有重复的项, 则不会去合并; �
   - proxies_proxy: &proxies_proxy {proxies: [Proxy, Alive, Random, Direct, Subscription¹, Subscription², Subscription³, Subscription⁴]}
   - proxies_direct: &proxies_direct {proxies: [Direct, Alive, Random, Proxy, Subscription¹, Subscription², Subscription³, Subscription⁴]}
 
-  - url_test: &url_test {type: url-test, expected-status: '204/200', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 15, tolerance: 5}
+  - url_test: &url_test {type: url-test, expected-status: '204', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 25, tolerance: 5}
 
-  - fallback: &fallback {type: fallback, expected-status: '204/200', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 15}
-  - fallback_netflix: &fallback_netflix {type: fallback, expected-status: '204/200', url: 'https://www.netflix.com/robots.txt', max-failed-times: 2, interval: 15}
-  - fallback_llmodel: &fallback_llmodel {type: fallback, expected-status: '204/200', url: 'https://chatgpt.com/robots.txt', max-failed-times: 2, interval: 15}
+  - fallback: &fallback {type: fallback, expected-status: '204', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 25}
+  - fallback_netflix: &fallback_netflix {type: fallback, expected-status: '204', url: 'https://www.netflix.com/robots.txt', max-failed-times: 2, interval: 25}
+  - fallback_llmodel: &fallback_llmodel {type: fallback, expected-status: '204', url: 'https://chatgpt.com/robots.txt', max-failed-times: 2, interval: 25}
 
-  - load_balance: &load_balance {type: load-balance, strategy: round-robin, expected-status: '204/200', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 15}
+  - load_balance: &load_balance {type: load-balance, strategy: round-robin, expected-status: '204', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 25}
 
 proxy-groups: # 策略组可以包含多个代理, 或多个远程代理集; 不包含任何代理的策略组, 会被当作为 DIRECT 策略处理; 如策略组代理来自远程代理集时, 则使用该来源的 health-check
   - {name: 'Proxy', type: select, <<: [*url_test], proxies: [Delay, Alive, Random, Direct, Magnification, Subscription¹, Subscription², Subscription³, Subscription⁴], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Final.png'}
@@ -283,7 +284,7 @@ proxy-groups: # 策略组可以包含多个代理, 或多个远程代理集; 不
   - {name: '台湾 lb²', <<: [*load_balance, *filter_TW], use: [Provider_2], hidden: true}
   - {name: '台湾 lb³', <<: [*load_balance, *filter_TW], use: [Provider_3], hidden: true}
   - {name: '台湾 lb⁴', <<: [*load_balance, *filter_TW], use: [Provider_4], hidden: true}
- 
+
   - {name: '日本 lb¹', <<: [*load_balance, *filter_JP], use: [Provider_1], hidden: true}
   - {name: '日本 lb²', <<: [*load_balance, *filter_JP], use: [Provider_2], hidden: true}
   - {name: '日本 lb³', <<: [*load_balance, *filter_JP], use: [Provider_3], hidden: true}
