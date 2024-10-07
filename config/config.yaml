@@ -1,4 +1,3 @@
-#!MANAGED-CONFIG https://gist.githubusercontent.com/yiteei/a32798012c3159064b896aa0f7664a2e/raw/clash.yaml
 #################### START ####################
 mode: 'rule' # 运行模式 rule/global/direct, 暂不支持 script
 log-level: 'debug' # 日志级别 silent/error/warning/info/debug
@@ -57,7 +56,7 @@ tun:
 
 
 hosts: # 支持单域名多 ip, 格式为数组; 支持域名通配符, 不使用通配符的域名优先级高于使用通配符的域名  Tip: 使用域名通配符的应该尽量用单引号包裹
-  'trpc.o3.*': [127.0.0.1] # 环境检测包（trpc.o3.*）拦截
+  'trpc.o3.*': [0.0.0.0] # 环境检测包（trpc.o3.*）拦截
 
 dns: # DNS 服务器书写规范应带引号, 以防出现特殊字符
   enable: true # 是否启用, 如为 false, 则使用系统 DNS 解析
@@ -71,17 +70,17 @@ dns: # DNS 服务器书写规范应带引号, 以防出现特殊字符
   enhanced-mode: 'redir-host' # DNS 处理模式 fake-ip/redir-host(Meta 回滚了 Redir Host 部分代码, 仍然保留 Clash v1.70 以前的 Redir Host 模式的域名传递行为)/normal
   nameserver-policy: # 指定的解析服务, 没匹配到使用 nameserver/fallback 并发查询
     'rule-set:site_geolocation-!cn': # 'cn' 里参杂了 'geolocation-!cn', 强制国外 DNS 解析
-      - 'https://1.0.0.1/dns-query#Proxy&ecs=1.0.0.1/24&ecs-override=true' # Cloudflare DNS
+      - 'https://1.0.0.1/dns-query#Proxy&ecs=1.0.0.1/24&ecs-override=true' # Cloudflare DNS, ecs 还没整明白
       - 'https://8.8.4.4/dns-query#Proxy&ecs=8.8.4.4/24&ecs-override=true' # Google DNS
     'rule-set:site_private,site_cn':
-      - 'https://223.6.6.6/dns-query'
-      - 'https://120.53.53.53/dns-query'
+      - 'https://223.6.6.6/dns-query' # Alibaba DNS
+      - 'https://120.53.53.53/dns-query' # Tencent DNS
   nameserver: # 默认域名解析, 如不配置 fallback/proxy-server-nameserver, 则都由 nameserver 解析
     - 'https://1.0.0.1/dns-query#Proxy&ecs=1.0.0.1/24&ecs-override=true'
     - 'https://8.8.4.4/dns-query#Proxy&ecs=8.8.4.4/24&ecs-override=true'
   proxy-server-nameserver: # 用于节点域名解析 如其他 DNS 需过代理查询/nameserver 为国外 DNS 则配置该项以防出现鸡蛋问题
-    - 'https://223.6.6.6/dns-query' # Alibaba DNS
-    - 'https://120.53.53.53/dns-query' # Tencent DNS
+    - 'https://223.6.6.6/dns-query'
+    - 'https://120.53.53.53/dns-query'
 
 
 sniffer: # Sniffer 域名嗅器 通过读取握手包内的域名字段, 将 IP 还原成域名
@@ -116,7 +115,7 @@ ntp: # NTP 服务器配置 如果使用 Vmess 协议, 客户端和 VPS 的时间
 
 proxies: # 出站配置 查看接口命令: netsh interface show interface  Tip: 手机需要 root 跑内核 以绑定接口
   - {name: 'DNS Hijacking', type: dns, udp: true} # dns 出站会将请求劫持到内部 dns 模块, 所有请求均在内部处理
-  - {name: 'Default', type: direct, udp: true}
+  - {name: 'Direct Auto', type: direct, udp: true}
   - {name: '以太网', type: direct, udp: true, interface-name: '以太网'} # Windows 网线
   - {name: 'WLAN', type: direct, udp: true, interface-name: 'WLAN'} # Windows WiFi
   - {name: 'wlan0', type: direct, udp: true, interface-name: 'wlan0'} # WiFi/W口
@@ -179,39 +178,37 @@ proxy-groups-anchor: # 锚点 如合并时有重复的项, 则不会去合并; �
   - filter_0.5x: &filter_0.5x {filter: '^(?=.*((?i)0.5倍|(\b(0.5x|x0.5)\b))).*$'}
   - filter_0.8x: &filter_0.8x {filter: '^(?=.*((?i)0.8倍|(\b(0.8x|x0.8)\b))).*$'}
 
-  - filter_HK: &filter_HK {filter: '^(?=.*((?i)🇭🇰|香港|(\b(HK|Hong)\b))).*$'}
+  - filter_HK: &filter_HK {filter: '^(?=.*((?i)🇭🇰|香港|港|(\b(HK|Hong)\b))).*$'}
   # - filter_HK_1: &filter_HK_1 {filter: '^(?=.*#1)(?=.*((?i)🇭🇰|香港|(\b(HK|Hong)\b))).*$'} # 包含 #1 的香港
-  # - filter_HK_2: &filter_HK_2 {filter: '^(?=.*#2)(?=.*((?i)🇭🇰|香港|(\b(HK|Hong)\b))).*$'} # 包含 #2 的香港
-  # - filter_HK_3: &filter_HK_3 {filter: '^(?=.*#3)(?=.*((?i)🇭🇰|香港|(\b(HK|Hong)\b))).*$'} # 包含 #3 的香港
-  # - filter_HK_4: &filter_HK_4 {filter: '^(?=.*#4)(?=.*((?i)🇭🇰|香港|(\b(HK|Hong)\b))).*$'} # 包含 #4 的香港
-  - filter_TW: &filter_TW {filter: '^(?=.*((?i)🇹🇼|台湾|(\b(TW|Tai|Taiwan)\b))).*$'}
+  - filter_TW: &filter_TW {filter: '^(?=.*((?i)🇹🇼|台湾|台北|台中|高雄|(\b(TW|Tai|Taiwan)\b))).*$'}
   - filter_JP: &filter_JP {filter: '^(?=.*((?i)🇯🇵|日本|川日|东京|大阪|泉日|埼玉|(\b(JP|Japan)\b))).*$'}
-  - filter_KR: &filter_KR {filter: '^(?=.*((?i)🇰🇷|韩国|韓|首尔|(\b(KR|Korea)\b))).*$'}
+  - filter_KR: &filter_KR {filter: '^(?=.*((?i)🇰🇷|韩国|南韩|首尔|釜山|(\b(KR|Korea|South Korea)\b))).*$'}
   - filter_SG: &filter_SG {filter: '^(?=.*((?i)🇸🇬|新加坡|狮|(\b(SG|Singapore)\b))).*$'}
   - filter_US: &filter_US {filter: '^(?=.*((?i)🇺🇸|美国|波特兰|达拉斯|俄勒冈|凤凰城|费利蒙|硅谷|拉斯维加斯|洛杉矶|圣何塞|圣克拉拉|西雅图|芝加哥|(\b(US|United States)\b))).*$'}
-  # - filter_UK: &filter_UK {filter: '^(?=.*((?i)🇬🇧|英国|伦敦|(\b(UK|United Kingdom)\b))).*$'}
-  # - filter_FR: &filter_FR {filter: '^(?=.*((?i)🇫🇷|法国|(\b(FR|France)\b))).*$'}
-  # - filter_DE: &filter_DE {filter: '^(?=.*((?i)🇩🇪|德国|(\b(DE|Germany)\b))).*$'}
+  # - filter_RU: &filter_RU {filter: '^(?=.*((?i)🇷🇺|俄罗斯|俄联邦|莫斯科|圣彼得堡|西伯利亚|(\b(RU|Russia)\b))).*$'}
+  # - filter_TR: &filter_TR {filter: '^(?=.*((?i)🇹🇷|土耳其|安卡拉|伊斯坦布尔|伊兹密尔|(\b(TR|Turkey)\b))).*$'}
+  # - filter_AR: &filter_AR {filter: '^(?=.*((?i)🇦🇷|阿根廷|布宜诺斯艾利斯|罗萨里奥|门多萨|(\b(AR|Argentina)\b))).*$'}
+  # - filter_UK: &filter_UK {filter: '^(?=.*((?i)🇬🇧|英国|英|伦敦|曼彻斯特|(\b(UK|United Kingdom|Britain)\b))).*$'}
+  # - filter_FR: &filter_FR {filter: '^(?=.*((?i)🇫🇷|法国|法|巴黎|马赛|(\b(FR|France)\b))).*$'}
+  # - filter_DE: &filter_DE {filter: '^(?=.*((?i)🇩🇪|德国|德|柏林|慕尼黑|(\b(DE|Germany)\b))).*$'}
   - filter_LU: &filter_LU {filter: '^(?=.*((?i)🇱🇺|卢森堡|(\b(LU|Luxembourg|BT|PT)\b))).*$'} # 种子专用
 
-  - proxies_proxy: &proxies_proxy {proxies: [Proxy, Alive, Random, Direct, Subscription¹, Subscription², Subscription³, Subscription⁴]}
-  - proxies_direct: &proxies_direct {proxies: [Direct, Alive, Random, Proxy, Subscription¹, Subscription², Subscription³, Subscription⁴]}
+  - proxies_proxy: &proxies_proxy {proxies: [Proxy, Direct, Subscription¹, Subscription², Subscription³, Subscription⁴]}
+  - proxies_direct: &proxies_direct {proxies: [Direct, Proxy, Subscription¹, Subscription², Subscription³, Subscription⁴]}
 
   - url_test: &url_test {type: url-test, expected-status: '204', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 25, tolerance: 5}
 
   - fallback: &fallback {type: fallback, expected-status: '204', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 25}
-  - fallback_netflix: &fallback_netflix {type: fallback, expected-status: '204', url: 'https://www.netflix.com/robots.txt', max-failed-times: 2, interval: 25}
-  - fallback_llmodel: &fallback_llmodel {type: fallback, expected-status: '204', url: 'https://chatgpt.com/robots.txt', max-failed-times: 2, interval: 25}
 
   - load_balance: &load_balance {type: load-balance, strategy: round-robin, expected-status: '204', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 25}
 
 proxy-groups: # 策略组可以包含多个代理, 或多个远程代理集; 不包含任何代理的策略组, 会被当作为 DIRECT 策略处理; 如策略组代理来自远程代理集时, 则使用该来源的 health-check
-  - {name: 'Proxy', type: select, <<: [*url_test], proxies: [Delay, Alive, Random, Direct, Magnification, Subscription¹, Subscription², Subscription³, Subscription⁴], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Final.png'}
-  - {name: 'Direct', type: select, proxies: [Default, 以太网 + WLAN, wlan0 + wlan1, data0 + wlan0, data0 + wlan1, data1 + wlan0, data1 + wlan1, data2 + wlan0, data2 + wlan1, data3 + wlan0, data3 + wlan1], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China_Map.png'}
-  - {name: 'LLModel', <<: [*fallback_llmodel, *proxies_proxy], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/ChatGPT.png'}
+  - {name: 'Proxy', type: select, <<: [*url_test], proxies: [Delay, Alive, Random, Magnification, Subscription¹, Subscription², Subscription³, Subscription⁴, Direct], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Final.png'}
+  - {name: 'Direct', type: select, proxies: [Direct Auto, 以太网 + WLAN, wlan0 + wlan1, data0 + wlan0, data0 + wlan1, data1 + wlan0, data1 + wlan1, data2 + wlan0, data2 + wlan1, data3 + wlan0, data3 + wlan1], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China_Map.png'}
+  - {name: 'LLModel', type: select, <<: [*proxies_proxy], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/ChatGPT.png'}
   - {name: 'Google', type: select, <<: [*proxies_direct], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png'}
   - {name: 'TGram', type: select, <<: [*proxies_proxy], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Telegram.png'}
-  - {name: 'Netflix', <<: [*fallback_netflix, *proxies_proxy], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Netflix.png'}
+  - {name: 'Netflix', type: select, <<: [*proxies_proxy], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Netflix.png'}
   - {name: 'Torrent', type: select, <<: [*proxies_direct, *filter_LU], include-all-providers: true, icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Server.png'}
   - {name: 'Privacy', type: select, proxies: [REJECT-DROP, PASS], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Hijacking.png'}
   - {name: 'Advertise', type: select, proxies: [REJECT-DROP, PASS], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Advertising.png'}
