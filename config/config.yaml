@@ -1,7 +1,5 @@
 #################### START ####################
 mode: 'rule' # 运行模式 rule/global/direct, 暂不支持 script
-log-level: 'debug' # 日志级别 silent/error/warning/info/debug
-find-process-mode: 'off' # 进程模式 off/strict/always
 geodata-mode: false # GEOIP 数据模式 geoip 文件为 mmdb/dat 格式, true 为 dat 格式
 
 ipv6: true # IPv6 是否允许内核接受 IPv6 流量
@@ -45,16 +43,6 @@ tun:
   auto-detect-interface: true # 自动选择流量出口接口, 多出口网卡同时连接的设备建议手动指定出口网卡
   strict-route: false # 严格路由 所有连接路由到 tun 来防止泄漏, 但设备将无法被其他设备访问
   udp-timeout: 180 # UDP NAT 过期时间, 单位 s, 默认为 300(5 分钟)
-  route-address:
-  # 启用 auto-route 时使用自定义路由而不是默认路由
-  - '0.0.0.0/1'
-  - '128.0.0.0/1'
-  - '::/1'
-  - '8000::/1'
-  route-exclude-address:
-  # 启用 auto-route 时排除自定义网段
-  - '192.168.0.0/16'
-  - 'fc00::/7'
 
 hosts:
   # 支持单域名多 ip, 格式为数组; 支持域名通配符, 不使用通配符的域名优先级高于使用通配符的域名  Tip: 使用域名通配符的应该尽量用单引号包裹
@@ -73,21 +61,21 @@ dns:
   enhanced-mode: 'redir-host' # DNS 处理模式 fake-ip/redir-host(Meta 回滚了 Redir Host 部分代码, 仍然保留 Clash v1.70 以前的 Redir Host 模式的域名传递行为)/normal
   proxy-server-nameserver:
   # 用于节点域名解析 如其他 DNS 需过代理查询/nameserver 为国外 DNS 时则配置该项以防出现鸡蛋问题
-  - 'https://223.6.6.6/dns-query' # Alibaba DNS
-  - 'https://doh.pub/dns-query' # Tencent DNS
+  - 'https://223.6.6.6/dns-query' # Alibaba
+  - 'https://120.53.53.53/dns-query' # Tencent
   nameserver-policy:
     # 指定的解析服务, 没匹配到使用 nameserver/fallback 并发查询
     'rule-set:site_geolocation-!cn':
     # 'cn' 里参杂了 'geolocation-!cn', 强制国外 DNS 解析
-    - 'https://1.0.0.1/dns-query#Proxy' # Cloudflare DNS
-    - 'https://8.8.4.4/dns-query#Proxy' # Google DNS
+    - 'https://1.0.0.1/dns-query#Proxy' # Cloudflare
+    - 'https://94.140.14.141/dns-query#Proxy' # AdGuard
     'rule-set:site_private,site_cn':
     - 'https://223.6.6.6/dns-query'
-    - 'https://doh.pub/dns-query'
+    - 'https://120.53.53.53/dns-query'
   nameserver:
   # 默认域名解析, 如不配置 fallback/proxy-server-nameserver, 则都由 nameserver 解析
   - 'https://1.0.0.1/dns-query#Proxy'
-  - 'https://8.8.4.4/dns-query#Proxy'
+  - 'https://94.140.14.141/dns-query#Proxy'
 
 sniffer:
   # Sniffer 域名嗅器 通过读取握手包内的域名字段, 将 IP 还原成域名
@@ -115,7 +103,7 @@ sniffer:
 proxies:
 # 出站配置 查看接口命令: netsh interface show interface  Tip: 手机需要 root 跑内核 以绑定接口
 - { name: 'DNS Hijacking', type: dns, udp: true } # dns 出站会将请求劫持到内部 dns 模块, 所有请求均在内部处理
-- { name: 'Direct Auto', type: direct, udp: true }
+- { name: 'Local Auto', type: direct, udp: true }
 - { name: '以太网', type: direct, udp: true, interface-name: '以太网' } # Windows 网线
 - { name: 'WLAN', type: direct, udp: true, interface-name: 'WLAN' } # Windows WiFi
 - { name: 'wlan0', type: direct, udp: true, interface-name: 'wlan0' } # WiFi/W口
@@ -127,18 +115,17 @@ proxies:
 
 proxy-providers-anchor:
 # 锚点 如合并时有重复的项, 则不会去合并; 锚点名尽量不要含特殊字符
-- health_check: &health_check { health-check: { enable: true, expected-status: '204', url: 'https://www.google.com/generate_204', interval: 30 } } # 延迟检测
+- health_check: &health_check { health-check: { enable: true, expected-status: '204', url: 'https://www.google.com/generate_204', interval: 60 } } # 延迟检测
 - header: &header { header: { User-Agent: [ 'clash-verge', 'ClashMetaForAndroid', 'flclash', 'clash.meta', 'meta', 'mihomo', 'stash', 'ClashforWindows', 'ClashForAndroid', 'clash' ] } } # UA
-- update: &update { proxy: Provider, interval: 86400 } # 更新 provider 使用的节点或策略组/更新 provider 的间隔, 单位 s  Tip: 设置的过于小可能被机场 ban
+- update: &update { proxy: Provider, interval: 43200 } # 更新 provider 使用的节点或策略组/更新 provider 的间隔, 单位 s  Tip: 设置的过于小可能被机场 ban
 - filter_exclude_ad: &filter_exclude_ad { filter: '^(?=.*(.))(?!.*((?i)群|邀请|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|导航|倒卖|防止|国内|地址|频道|无法|说明|使用|提示|特别|访问|支持|教程|关注|更新|作者|加入|(\b(USE|USED|TG|TOTAL|EXPIRE|EMAIL|Panel|Channel|Author)\b|(\d{4}-\d{2}-\d{2}|\d+G)))).*$' } # 引入筛选/排除, 使用筛选可能会在一定程度上增加CPU占用/转发延迟, 尤其是使用较为复杂正则的情况下
-- override: &override { ip-version: 'ipv4-prefer' } # 覆写
+- override: &override { udp: true } # 覆写
 
 proxy-providers:
   # 支持直接使用 V2rayN 等客户端的普通订阅; 一个合法的远程代理集必须包含 proxies 字段, 远程代理集为空时会以 DIRECT 替代
   Provider_1:
-    # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http # 必须, provider 类型 http/file
-    url: 'http://127.0.0.1:38324/download/collection/Provider_Paid?target=ClashMeta' # 此行单引号内填入你的订阅链接
+    url: 'http://127.0.0.1:38324/download/RioLU.443%20%E7%B2%BE%E9%9D%88%E5%AD%B8%E9%99%A2' # 此行单引号内填入你的订阅链接
     <<: [ *health_check, *header, *update, *filter_exclude_ad ]
     override:
       <<: *override
@@ -146,9 +133,8 @@ proxy-providers:
     path: './proxy_providers/Provider_1.yaml' # 配置保存位置 '/'代表根目录 './'代表当前目录,'../'代表上级目录
 
   Provider_2:
-    # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http
-    url: '' # 此行单引号内填入你的订阅链接
+    url: 'http://127.0.0.1:38324/download/Free%20Cloud' # 此行单引号内填入你的订阅链接
     <<: [ *health_check, *header, *update, *filter_exclude_ad ]
     override:
       <<: *override
@@ -156,9 +142,8 @@ proxy-providers:
     path: './proxy_providers/Provider_2.yaml' # 配置保存位置
 
   Provider_3:
-    # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http
-    url: 'http://127.0.0.1:38324/download/collection/Provider_Free?target=ClashMeta' # 此行单引号内填入你的订阅链接
+    url: 'http://127.0.0.1:38324/download/Free%20Sub' # 此行单引号内填入你的订阅链接
     <<: [ *health_check, *header, *update, *filter_exclude_ad ]
     override:
       <<: *override
@@ -166,9 +151,8 @@ proxy-providers:
     path: './proxy_providers/Provider_3.yaml' # 配置保存位置
 
   Provider_4:
-    # Free Cloud aff: https://intel.im/#/register?code=YDEx84ta
     type: http
-    url: '' # 此行单引号内填入你的订阅链接
+    url: 'http://127.0.0.1:38324/download/CM%20Vless' # 此行单引号内填入你的订阅链接
     <<: [ *health_check, *header, *update, *filter_exclude_ad ]
     override:
       <<: *override
@@ -177,7 +161,7 @@ proxy-providers:
 
 proxy-groups-anchor:
 # 锚点 如合并时有重复的项, 则不会去合并; 锚点名尽量不要含特殊字符
-- filter_exclude_back: &filter_exclude_back { filter: '^(?!.*((?i)回国|校园)).*$' } # 排除回国
+- filter_EB: &filter_EB { filter: '^(?!.*((?i)回国|校园)).*$' } # 排除回国
 - filter_0x: &filter_0x { filter: '^(?=.*((?i)0倍|(\b(0x|x0)\b))).*$' } # 0 倍节点
 - filter_0.1x: &filter_0.1x { filter: '^(?=.*((?i)0.1倍|(\b(0.1x|x0.1)\b))).*$' }
 - filter_0.5x: &filter_0.5x { filter: '^(?=.*((?i)0.5倍|(\b(0.5x|x0.5)\b))).*$' }
@@ -198,126 +182,134 @@ proxy-groups-anchor:
 # - filter_DE: &filter_DE {filter: '^(?=.*((?i)🇩🇪|德国|德|柏林|慕尼黑|(\b(DE|Germany)\b))).*$'}
 - filter_LU: &filter_LU { filter: '^(?=.*((?i)🇱🇺|卢森堡|(\b(LU|Luxembourg|BT|PT)\b))).*$' } # 种子专用
 
-- proxies_proxy: &proxies_proxy { proxies: [ Proxy, Direct, Subscription¹, Subscription², Subscription³, Subscription⁴ ] }
-- proxies_direct: &proxies_direct { proxies: [ Direct, Proxy, Subscription¹, Subscription², Subscription³, Subscription⁴ ] }
+- proxies_proxy: &proxies_proxy { proxies: [ Proxy, Local, Subscription¹, Subscription², Subscription³, Subscription⁴ ] }
+- proxies_direct: &proxies_direct { proxies: [ Local, Proxy, Subscription¹, Subscription², Subscription³, Subscription⁴ ] }
 
-- url_test: &url_test { type: url-test, expected-status: '204', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 30, tolerance: 5 }
+- UT: &UT { type: url-test, expected-status: '204', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 30, tolerance: 10 }
 
-- fallback: &fallback { type: fallback, expected-status: '204', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 30 }
+- FB: &FB { type: fallback, expected-status: '204', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 30 }
 
-- load_balance: &load_balance { type: load-balance, strategy: round-robin, expected-status: '204', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 30 }
+- LB-SS: &LB-SS { type: load-balance, strategy: sticky-sessions, expected-status: '204', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 30 }
+- LB-RR: &LB-RR { type: load-balance, strategy: round-robin, expected-status: '204', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 30 }
 
 proxy-groups:
 # 策略组可以包含多个代理, 或多个远程代理集; 不包含任何代理的策略组, 会被当作为 DIRECT 策略处理; 如策略组代理来自远程代理集时, 则使用该来源的 health-check
-- { name: 'Proxy', type: select, <<: [ *url_test ], proxies: [ Delay, Alive, Random, Magnification, Subscription¹, Subscription², Subscription³, Subscription⁴, Direct ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Final.png' }
-- { name: 'Direct', type: select, proxies: [ Direct Auto, 以太网 + WLAN, wlan0 + wlan1, data0 + wlan0, data0 + wlan1, data1 + wlan0, data1 + wlan1, data2 + wlan0, data2 + wlan1, data3 + wlan0, data3 + wlan1 ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China_Map.png' }
+- { name: 'Proxy', type: select, <<: [ *UT ], proxies: [ Delay, Local, Subscription¹, Subscription², Subscription³, Subscription⁴, Magnification ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Final.png' }
+- { name: 'Local', type: select, proxies: [ Local Auto, 以太网 + WLAN, wlan0 + wlan1, data0 + wlan0, data0 + wlan1, data1 + wlan0, data1 + wlan1, data2 + wlan0, data2 + wlan1, data3 + wlan0, data3 + wlan1 ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China_Map.png' }
 - { name: 'LModel', type: select, <<: [ *proxies_proxy ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/ChatGPT.png' }
 - { name: 'Google', type: select, <<: [ *proxies_direct ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png' }
 - { name: 'TGram', type: select, <<: [ *proxies_proxy ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Telegram.png' }
 - { name: 'Netflix', type: select, <<: [ *proxies_proxy ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Netflix.png' }
-- { name: 'Torrent', type: select, proxies: [ PASS, Direct, Proxy, Subscription¹, Subscription², Subscription³, Subscription⁴ ], <<: [ *filter_LU ], include-all-providers: true, icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Server.png' }
+- { name: 'Torrent', type: select, proxies: [ PASS, Local, Proxy, Subscription¹, Subscription², Subscription³, Subscription⁴ ], <<: [ *filter_LU ], include-all-providers: true, icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Server.png' }
 - { name: 'Privacy', type: select, proxies: [ REJECT-DROP, PASS ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Hijacking.png' }
 - { name: 'Advertise', type: select, proxies: [ REJECT-DROP, PASS ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Advertising.png' }
-- { name: 'Recreation', type: select, proxies: [ PASS, Proxy, Direct ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Game.png' }
+- { name: 'Recreation', type: select, proxies: [ PASS, Proxy, Local ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Game.png' }
 
-- { name: 'Provider', type: select, proxies: [ PASS, Direct, Proxy ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Stack.png' } # 用于控制资源更新的策略组
+- { name: 'Provider', type: select, proxies: [ PASS, Local, Proxy ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Stack.png' } # 用于控制资源更新的策略组
 - { name: 'Magnification', type: select, proxies: [ 0x, 0.1x, 0.5x, 0.8x ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Speedtest.png' }
-- { name: 'Subscription¹', type: select, proxies: [ Delay¹, Alive¹, 香港 ut¹, 台湾 ut¹, 日本 ut¹, 韩国 ut¹, 狮城 ut¹, 美国 ut¹, 香港 lb¹, 台湾 lb¹, 日本 lb¹, 韩国 lb¹, 狮城 lb¹, 美国 lb¹ ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png' }
-- { name: 'Subscription²', type: select, proxies: [ Delay², Alive², 香港 ut², 台湾 ut², 日本 ut², 韩国 ut², 狮城 ut², 美国 ut², 香港 lb², 台湾 lb², 日本 lb², 韩国 lb², 狮城 lb², 美国 lb² ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png' }
-- { name: 'Subscription³', type: select, proxies: [ Delay³, Alive³, 香港 ut³, 台湾 ut³, 日本 ut³, 韩国 ut³, 狮城 ut³, 美国 ut³, 香港 lb³, 台湾 lb³, 日本 lb³, 韩国 lb³, 狮城 lb³, 美国 lb³ ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png' }
-- { name: 'Subscription⁴', type: select, proxies: [ Delay⁴, Alive⁴, 香港 ut⁴, 台湾 ut⁴, 日本 ut⁴, 韩国 ut⁴, 狮城 ut⁴, 美国 ut⁴, 香港 lb⁴, 台湾 lb⁴, 日本 lb⁴, 韩国 lb⁴, 狮城 lb⁴, 美国 lb⁴ ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png' }
+- { name: 'Subscription¹', type: select, proxies: [ Delay¹, Alive¹, Affinity¹, Balance¹, 🇭🇰 香港 ut¹, 🇹🇼 台湾 ut¹, 🇯🇵 日本 ut¹, 🇰🇷 韩国 ut¹, 🇸🇬 狮城 ut¹, 🇺🇸 美国 ut¹, 🇭🇰 香港 lb¹, 🇹🇼 台湾 lb¹, 🇯🇵 日本 lb¹, 🇰🇷 韩国 lb¹, 🇸🇬 狮城 lb¹, 🇺🇸 美国 lb¹ ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png' }
+- { name: 'Subscription²', type: select, proxies: [ Delay², Alive², Affinity², Balance², 🇭🇰 香港 ut², 🇹🇼 台湾 ut², 🇯🇵 日本 ut², 🇰🇷 韩国 ut², 🇸🇬 狮城 ut², 🇺🇸 美国 ut², 🇭🇰 香港 lb², 🇹🇼 台湾 lb², 🇯🇵 日本 lb², 🇰🇷 韩国 lb², 🇸🇬 狮城 lb², 🇺🇸 美国 lb² ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png' }
+- { name: 'Subscription³', type: select, proxies: [ Delay³, Alive³, Affinity³, Balance³, 🇭🇰 香港 ut³, 🇹🇼 台湾 ut³, 🇯🇵 日本 ut³, 🇰🇷 韩国 ut³, 🇸🇬 狮城 ut³, 🇺🇸 美国 ut³, 🇭🇰 香港 lb³, 🇹🇼 台湾 lb³, 🇯🇵 日本 lb³, 🇰🇷 韩国 lb³, 🇸🇬 狮城 lb³, 🇺🇸 美国 lb³ ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png' }
+- { name: 'Subscription⁴', type: select, proxies: [ Delay⁴, Alive⁴, Affinity⁴, Balance⁴, 🇭🇰 香港 ut⁴, 🇹🇼 台湾 ut⁴, 🇯🇵 日本 ut⁴, 🇰🇷 韩国 ut⁴, 🇸🇬 狮城 ut⁴, 🇺🇸 美国 ut⁴, 🇭🇰 香港 lb⁴, 🇹🇼 台湾 lb⁴, 🇯🇵 日本 lb⁴, 🇰🇷 韩国 lb⁴, 🇸🇬 狮城 lb⁴, 🇺🇸 美国 lb⁴ ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available.png' }
 
 - { name: 'QUIC', type: select, proxies: [ PASS, REJECT-DROP ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png' }
 
-- { name: '0x', <<: [ *url_test, *filter_0x ], include-all-providers: true, hidden: true }
-- { name: '0.1x', <<: [ *url_test, *filter_0.1x ], include-all-providers: true, hidden: true }
-- { name: '0.5x', <<: [ *url_test, *filter_0.5x ], include-all-providers: true, hidden: true }
-- { name: '0.8x', <<: [ *url_test, *filter_0.8x ], include-all-providers: true, hidden: true }
+- { name: '0x', <<: [ *UT, *filter_0x ], include-all-providers: true, hidden: true }
+- { name: '0.1x', <<: [ *UT, *filter_0.1x ], include-all-providers: true, hidden: true }
+- { name: '0.5x', <<: [ *UT, *filter_0.5x ], include-all-providers: true, hidden: true }
+- { name: '0.8x', <<: [ *UT, *filter_0.8x ], include-all-providers: true, hidden: true }
 
-- { name: 'Delay', <<: [ *url_test, *filter_exclude_back ], include-all-providers: true, hidden: true }
-- { name: 'Alive', <<: [ *fallback, *filter_exclude_back ], include-all-providers: true, hidden: true }
-- { name: 'Random', <<: [ *load_balance, *filter_exclude_back ], include-all-providers: true, hidden: true }
+- { name: 'Delay', <<: [ *UT, *filter_EB ], include-all-providers: true, hidden: true }
+- { name: 'Delay¹', <<: [ *UT, *filter_EB ], use: [ Provider_1 ], hidden: true }
+- { name: 'Delay²', <<: [ *UT, *filter_EB ], use: [ Provider_2 ], hidden: true }
+- { name: 'Delay³', <<: [ *UT, *filter_EB ], use: [ Provider_3 ], hidden: true }
+- { name: 'Delay⁴', <<: [ *UT, *filter_EB ], use: [ Provider_4 ], hidden: true }
 
-- { name: 'Delay¹', <<: [ *url_test, *filter_exclude_back ], use: [ Provider_1 ], hidden: true }
-- { name: 'Delay²', <<: [ *url_test, *filter_exclude_back ], use: [ Provider_2 ], hidden: true }
-- { name: 'Delay³', <<: [ *url_test, *filter_exclude_back ], use: [ Provider_3 ], hidden: true }
-- { name: 'Delay⁴', <<: [ *url_test, *filter_exclude_back ], use: [ Provider_4 ], hidden: true }
+- { name: 'Alive¹', <<: [ *FB, *filter_EB ], use: [ Provider_1 ], hidden: true }
+- { name: 'Alive²', <<: [ *FB, *filter_EB ], use: [ Provider_2 ], hidden: true }
+- { name: 'Alive³', <<: [ *FB, *filter_EB ], use: [ Provider_3 ], hidden: true }
+- { name: 'Alive⁴', <<: [ *FB, *filter_EB ], use: [ Provider_4 ], hidden: true }
 
-- { name: 'Alive¹', <<: [ *fallback, *filter_exclude_back ], use: [ Provider_1 ], hidden: true }
-- { name: 'Alive²', <<: [ *fallback, *filter_exclude_back ], use: [ Provider_2 ], hidden: true }
-- { name: 'Alive³', <<: [ *fallback, *filter_exclude_back ], use: [ Provider_3 ], hidden: true }
-- { name: 'Alive⁴', <<: [ *fallback, *filter_exclude_back ], use: [ Provider_4 ], hidden: true }
+- { name: 'Affinity¹', <<: [ *LB-SS, *filter_EB ], use: [ Provider_1 ], hidden: true }
+- { name: 'Affinity²', <<: [ *LB-SS, *filter_EB ], use: [ Provider_2 ], hidden: true }
+- { name: 'Affinity³', <<: [ *LB-SS, *filter_EB ], use: [ Provider_3 ], hidden: true }
+- { name: 'Affinity⁴', <<: [ *LB-SS, *filter_EB ], use: [ Provider_4 ], hidden: true }
 
-- { name: '香港 ut¹', <<: [ *url_test, *filter_HK ], use: [ Provider_1 ], hidden: true }
-- { name: '香港 ut²', <<: [ *url_test, *filter_HK ], use: [ Provider_2 ], hidden: true }
-- { name: '香港 ut³', <<: [ *url_test, *filter_HK ], use: [ Provider_3 ], hidden: true }
-- { name: '香港 ut⁴', <<: [ *url_test, *filter_HK ], use: [ Provider_4 ], hidden: true }
+- { name: 'Balance¹', <<: [ *LB-RR, *filter_EB ], use: [ Provider_1 ], hidden: true }
+- { name: 'Balance²', <<: [ *LB-RR, *filter_EB ], use: [ Provider_2 ], hidden: true }
+- { name: 'Balance³', <<: [ *LB-RR, *filter_EB ], use: [ Provider_3 ], hidden: true }
+- { name: 'Balance⁴', <<: [ *LB-RR, *filter_EB ], use: [ Provider_4 ], hidden: true }
 
-- { name: '台湾 ut¹', <<: [ *url_test, *filter_TW ], use: [ Provider_1 ], hidden: true }
-- { name: '台湾 ut²', <<: [ *url_test, *filter_TW ], use: [ Provider_2 ], hidden: true }
-- { name: '台湾 ut³', <<: [ *url_test, *filter_TW ], use: [ Provider_3 ], hidden: true }
-- { name: '台湾 ut⁴', <<: [ *url_test, *filter_TW ], use: [ Provider_4 ], hidden: true }
+- { name: '🇭🇰 香港 ut¹', <<: [ *UT, *filter_HK ], use: [ Provider_1 ], hidden: true }
+- { name: '🇭🇰 香港 ut²', <<: [ *UT, *filter_HK ], use: [ Provider_2 ], hidden: true }
+- { name: '🇭🇰 香港 ut³', <<: [ *UT, *filter_HK ], use: [ Provider_3 ], hidden: true }
+- { name: '🇭🇰 香港 ut⁴', <<: [ *UT, *filter_HK ], use: [ Provider_4 ], hidden: true }
 
-- { name: '日本 ut¹', <<: [ *url_test, *filter_JP ], use: [ Provider_1 ], hidden: true }
-- { name: '日本 ut²', <<: [ *url_test, *filter_JP ], use: [ Provider_2 ], hidden: true }
-- { name: '日本 ut³', <<: [ *url_test, *filter_JP ], use: [ Provider_3 ], hidden: true }
-- { name: '日本 ut⁴', <<: [ *url_test, *filter_JP ], use: [ Provider_4 ], hidden: true }
+- { name: '🇹🇼 台湾 ut¹', <<: [ *UT, *filter_TW ], use: [ Provider_1 ], hidden: true }
+- { name: '🇹🇼 台湾 ut²', <<: [ *UT, *filter_TW ], use: [ Provider_2 ], hidden: true }
+- { name: '🇹🇼 台湾 ut³', <<: [ *UT, *filter_TW ], use: [ Provider_3 ], hidden: true }
+- { name: '🇹🇼 台湾 ut⁴', <<: [ *UT, *filter_TW ], use: [ Provider_4 ], hidden: true }
 
-- { name: '韩国 ut¹', <<: [ *url_test, *filter_KR ], use: [ Provider_1 ], hidden: true }
-- { name: '韩国 ut²', <<: [ *url_test, *filter_KR ], use: [ Provider_2 ], hidden: true }
-- { name: '韩国 ut³', <<: [ *url_test, *filter_KR ], use: [ Provider_3 ], hidden: true }
-- { name: '韩国 ut⁴', <<: [ *url_test, *filter_KR ], use: [ Provider_4 ], hidden: true }
+- { name: '🇯🇵 日本 ut¹', <<: [ *UT, *filter_JP ], use: [ Provider_1 ], hidden: true }
+- { name: '🇯🇵 日本 ut²', <<: [ *UT, *filter_JP ], use: [ Provider_2 ], hidden: true }
+- { name: '🇯🇵 日本 ut³', <<: [ *UT, *filter_JP ], use: [ Provider_3 ], hidden: true }
+- { name: '🇯🇵 日本 ut⁴', <<: [ *UT, *filter_JP ], use: [ Provider_4 ], hidden: true }
 
-- { name: '狮城 ut¹', <<: [ *url_test, *filter_SG ], use: [ Provider_1 ], hidden: true }
-- { name: '狮城 ut²', <<: [ *url_test, *filter_SG ], use: [ Provider_2 ], hidden: true }
-- { name: '狮城 ut³', <<: [ *url_test, *filter_SG ], use: [ Provider_3 ], hidden: true }
-- { name: '狮城 ut⁴', <<: [ *url_test, *filter_SG ], use: [ Provider_4 ], hidden: true }
+- { name: '🇰🇷 韩国 ut¹', <<: [ *UT, *filter_KR ], use: [ Provider_1 ], hidden: true }
+- { name: '🇰🇷 韩国 ut²', <<: [ *UT, *filter_KR ], use: [ Provider_2 ], hidden: true }
+- { name: '🇰🇷 韩国 ut³', <<: [ *UT, *filter_KR ], use: [ Provider_3 ], hidden: true }
+- { name: '🇰🇷 韩国 ut⁴', <<: [ *UT, *filter_KR ], use: [ Provider_4 ], hidden: true }
 
-- { name: '美国 ut¹', <<: [ *url_test, *filter_US ], use: [ Provider_1 ], hidden: true }
-- { name: '美国 ut²', <<: [ *url_test, *filter_US ], use: [ Provider_2 ], hidden: true }
-- { name: '美国 ut³', <<: [ *url_test, *filter_US ], use: [ Provider_3 ], hidden: true }
-- { name: '美国 ut⁴', <<: [ *url_test, *filter_US ], use: [ Provider_4 ], hidden: true }
+- { name: '🇸🇬 狮城 ut¹', <<: [ *UT, *filter_SG ], use: [ Provider_1 ], hidden: true }
+- { name: '🇸🇬 狮城 ut²', <<: [ *UT, *filter_SG ], use: [ Provider_2 ], hidden: true }
+- { name: '🇸🇬 狮城 ut³', <<: [ *UT, *filter_SG ], use: [ Provider_3 ], hidden: true }
+- { name: '🇸🇬 狮城 ut⁴', <<: [ *UT, *filter_SG ], use: [ Provider_4 ], hidden: true }
 
-- { name: '香港 lb¹', <<: [ *load_balance, *filter_HK ], use: [ Provider_1 ], hidden: true }
-- { name: '香港 lb²', <<: [ *load_balance, *filter_HK ], use: [ Provider_2 ], hidden: true }
-- { name: '香港 lb³', <<: [ *load_balance, *filter_HK ], use: [ Provider_3 ], hidden: true }
-- { name: '香港 lb⁴', <<: [ *load_balance, *filter_HK ], use: [ Provider_4 ], hidden: true }
+- { name: '🇺🇸 美国 ut¹', <<: [ *UT, *filter_US ], use: [ Provider_1 ], hidden: true }
+- { name: '🇺🇸 美国 ut²', <<: [ *UT, *filter_US ], use: [ Provider_2 ], hidden: true }
+- { name: '🇺🇸 美国 ut³', <<: [ *UT, *filter_US ], use: [ Provider_3 ], hidden: true }
+- { name: '🇺🇸 美国 ut⁴', <<: [ *UT, *filter_US ], use: [ Provider_4 ], hidden: true }
 
-- { name: '台湾 lb¹', <<: [ *load_balance, *filter_TW ], use: [ Provider_1 ], hidden: true }
-- { name: '台湾 lb²', <<: [ *load_balance, *filter_TW ], use: [ Provider_2 ], hidden: true }
-- { name: '台湾 lb³', <<: [ *load_balance, *filter_TW ], use: [ Provider_3 ], hidden: true }
-- { name: '台湾 lb⁴', <<: [ *load_balance, *filter_TW ], use: [ Provider_4 ], hidden: true }
+- { name: '🇭🇰 香港 lb¹', <<: [ *LB-RR, *filter_HK ], use: [ Provider_1 ], hidden: true }
+- { name: '🇭🇰 香港 lb²', <<: [ *LB-RR, *filter_HK ], use: [ Provider_2 ], hidden: true }
+- { name: '🇭🇰 香港 lb³', <<: [ *LB-RR, *filter_HK ], use: [ Provider_3 ], hidden: true }
+- { name: '🇭🇰 香港 lb⁴', <<: [ *LB-RR, *filter_HK ], use: [ Provider_4 ], hidden: true }
 
-- { name: '日本 lb¹', <<: [ *load_balance, *filter_JP ], use: [ Provider_1 ], hidden: true }
-- { name: '日本 lb²', <<: [ *load_balance, *filter_JP ], use: [ Provider_2 ], hidden: true }
-- { name: '日本 lb³', <<: [ *load_balance, *filter_JP ], use: [ Provider_3 ], hidden: true }
-- { name: '日本 lb⁴', <<: [ *load_balance, *filter_JP ], use: [ Provider_4 ], hidden: true }
+- { name: '🇹🇼 台湾 lb¹', <<: [ *LB-RR, *filter_TW ], use: [ Provider_1 ], hidden: true }
+- { name: '🇹🇼 台湾 lb²', <<: [ *LB-RR, *filter_TW ], use: [ Provider_2 ], hidden: true }
+- { name: '🇹🇼 台湾 lb³', <<: [ *LB-RR, *filter_TW ], use: [ Provider_3 ], hidden: true }
+- { name: '🇹🇼 台湾 lb⁴', <<: [ *LB-RR, *filter_TW ], use: [ Provider_4 ], hidden: true }
 
-- { name: '韩国 lb¹', <<: [ *load_balance, *filter_KR ], use: [ Provider_1 ], hidden: true }
-- { name: '韩国 lb²', <<: [ *load_balance, *filter_KR ], use: [ Provider_2 ], hidden: true }
-- { name: '韩国 lb³', <<: [ *load_balance, *filter_KR ], use: [ Provider_3 ], hidden: true }
-- { name: '韩国 lb⁴', <<: [ *load_balance, *filter_KR ], use: [ Provider_4 ], hidden: true }
+- { name: '🇯🇵 日本 lb¹', <<: [ *LB-RR, *filter_JP ], use: [ Provider_1 ], hidden: true }
+- { name: '🇯🇵 日本 lb²', <<: [ *LB-RR, *filter_JP ], use: [ Provider_2 ], hidden: true }
+- { name: '🇯🇵 日本 lb³', <<: [ *LB-RR, *filter_JP ], use: [ Provider_3 ], hidden: true }
+- { name: '🇯🇵 日本 lb⁴', <<: [ *LB-RR, *filter_JP ], use: [ Provider_4 ], hidden: true }
 
-- { name: '狮城 lb¹', <<: [ *load_balance, *filter_SG ], use: [ Provider_1 ], hidden: true }
-- { name: '狮城 lb²', <<: [ *load_balance, *filter_SG ], use: [ Provider_2 ], hidden: true }
-- { name: '狮城 lb³', <<: [ *load_balance, *filter_SG ], use: [ Provider_3 ], hidden: true }
-- { name: '狮城 lb⁴', <<: [ *load_balance, *filter_SG ], use: [ Provider_4 ], hidden: true }
+- { name: '🇰🇷 韩国 lb¹', <<: [ *LB-RR, *filter_KR ], use: [ Provider_1 ], hidden: true }
+- { name: '🇰🇷 韩国 lb²', <<: [ *LB-RR, *filter_KR ], use: [ Provider_2 ], hidden: true }
+- { name: '🇰🇷 韩国 lb³', <<: [ *LB-RR, *filter_KR ], use: [ Provider_3 ], hidden: true }
+- { name: '🇰🇷 韩国 lb⁴', <<: [ *LB-RR, *filter_KR ], use: [ Provider_4 ], hidden: true }
 
-- { name: '美国 lb¹', <<: [ *load_balance, *filter_US ], use: [ Provider_1 ], hidden: true }
-- { name: '美国 lb²', <<: [ *load_balance, *filter_US ], use: [ Provider_2 ], hidden: true }
-- { name: '美国 lb³', <<: [ *load_balance, *filter_US ], use: [ Provider_3 ], hidden: true }
-- { name: '美国 lb⁴', <<: [ *load_balance, *filter_US ], use: [ Provider_4 ], hidden: true }
+- { name: '🇸🇬 狮城 lb¹', <<: [ *LB-RR, *filter_SG ], use: [ Provider_1 ], hidden: true }
+- { name: '🇸🇬 狮城 lb²', <<: [ *LB-RR, *filter_SG ], use: [ Provider_2 ], hidden: true }
+- { name: '🇸🇬 狮城 lb³', <<: [ *LB-RR, *filter_SG ], use: [ Provider_3 ], hidden: true }
+- { name: '🇸🇬 狮城 lb⁴', <<: [ *LB-RR, *filter_SG ], use: [ Provider_4 ], hidden: true }
 
-- { name: '以太网 + WLAN', <<: *load_balance, proxies: [ 以太网, WLAN ], hidden: true }
-- { name: 'wlan0 + wlan1', <<: *load_balance, proxies: [ wlan0, wlan1 ], hidden: true }
-- { name: 'data0 + wlan0', <<: *load_balance, proxies: [ rmnet_data0, wlan0 ], hidden: true }
-- { name: 'data0 + wlan1', <<: *load_balance, proxies: [ rmnet_data0, wlan1 ], hidden: true }
-- { name: 'data1 + wlan0', <<: *load_balance, proxies: [ rmnet_data1, wlan0 ], hidden: true }
-- { name: 'data1 + wlan1', <<: *load_balance, proxies: [ rmnet_data1, wlan1 ], hidden: true }
-- { name: 'data2 + wlan0', <<: *load_balance, proxies: [ rmnet_data2, wlan0 ], hidden: true }
-- { name: 'data2 + wlan1', <<: *load_balance, proxies: [ rmnet_data2, wlan1 ], hidden: true }
-- { name: 'data3 + wlan0', <<: *load_balance, proxies: [ rmnet_data3, wlan0 ], hidden: true }
-- { name: 'data3 + wlan1', <<: *load_balance, proxies: [ rmnet_data3, wlan1 ], hidden: true }
+- { name: '🇺🇸 美国 lb¹', <<: [ *LB-RR, *filter_US ], use: [ Provider_1 ], hidden: true }
+- { name: '🇺🇸 美国 lb²', <<: [ *LB-RR, *filter_US ], use: [ Provider_2 ], hidden: true }
+- { name: '🇺🇸 美国 lb³', <<: [ *LB-RR, *filter_US ], use: [ Provider_3 ], hidden: true }
+- { name: '🇺🇸 美国 lb⁴', <<: [ *LB-RR, *filter_US ], use: [ Provider_4 ], hidden: true }
+
+- { name: '以太网 + WLAN', <<: *LB-RR, proxies: [ 以太网, WLAN ], hidden: true }
+- { name: 'wlan0 + wlan1', <<: *LB-RR, proxies: [ wlan0, wlan1 ], hidden: true }
+- { name: 'data0 + wlan0', <<: *LB-RR, proxies: [ rmnet_data0, wlan0 ], hidden: true }
+- { name: 'data0 + wlan1', <<: *LB-RR, proxies: [ rmnet_data0, wlan1 ], hidden: true }
+- { name: 'data1 + wlan0', <<: *LB-RR, proxies: [ rmnet_data1, wlan0 ], hidden: true }
+- { name: 'data1 + wlan1', <<: *LB-RR, proxies: [ rmnet_data1, wlan1 ], hidden: true }
+- { name: 'data2 + wlan0', <<: *LB-RR, proxies: [ rmnet_data2, wlan0 ], hidden: true }
+- { name: 'data2 + wlan1', <<: *LB-RR, proxies: [ rmnet_data2, wlan1 ], hidden: true }
+- { name: 'data3 + wlan0', <<: *LB-RR, proxies: [ rmnet_data3, wlan0 ], hidden: true }
+- { name: 'data3 + wlan1', <<: *LB-RR, proxies: [ rmnet_data3, wlan1 ], hidden: true }
 
 rule-providers-anchor:
   # 锚点 如合并时有重复的项, 则不会去合并; 锚点名尽量不要含特殊字符
@@ -332,7 +324,7 @@ rule-providers:
     format: text
     <<: *rule_domain
     path: './rule_providers/domain/dns-blocklists'
-    url: 'https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@master/domains/light.txt'
+    url: 'https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@master/domains/pro.txt'
   site_httpdns:
     <<: *rule_domain
     path: './rule_providers/domain/httpdns'
@@ -442,16 +434,16 @@ rules:
 - 'AND,((NETWORK,udp),(OR,(DOMAIN-KEYWORD,stun),(DOMAIN-KEYWORD,turn))),Privacy' # 是否禁用 stun/turn 协议的 udp 数据，禁用后可以有效解决 webrtc 的 ip 泄露
 - 'AND,((DST-PORT,5228-5230),(RULE-SET,site_googlefcm)),Google' # Google FCM 直连确保 DNS 无污染/劫持
 - 'OR,((RULE-SET,site_httpdns),(RULE-SET,site_category-httpdns-cn),(DOMAIN-KEYWORD,httpdns)),REJECT-DROP' # 拦截 httpdns 服务, 以确保这些请求能够在 Clash 的 DNS 框架下工作
-- 'OR,((RULE-SET,site_private),(RULE-SET,ip_private,no-resolve)),Direct' # 局域网..
+- 'OR,((RULE-SET,site_private),(RULE-SET,ip_private,no-resolve)),Local' # 局域网..
 - 'OR,((RULE-SET,site_category-public-tracker),(RULE-SET,site_category-pt)),Torrent' # 种子
 - 'OR,((RULE-SET,site_category-games@cn),(RULE-SET,site_category-games@cn)),Recreation' # 游戏相关部分 cn 域名
 - 'OR,((RULE-SET,site_telegram),(RULE-SET,ip_telegram)),TGram' # Telegram
 - 'OR,((RULE-SET,site_netflix),(RULE-SET,ip_netflix)),Netflix' # Netflix
 - 'OR,((RULE-SET,site_category-ai-chat-!cn),(RULE-SET,site_openai)),LModel' # 语言模型
 - 'OR,((RULE-SET,site_google),(RULE-SET,ip_google)),Proxy' # Google
-- 'OR,((RULE-SET,site_tencent),(RULE-SET,asn_45090),(RULE-SET,asn_132203)),Direct' # 腾讯
+- 'OR,((RULE-SET,site_tencent),(RULE-SET,asn_45090),(RULE-SET,asn_132203)),Local' # 腾讯
 - 'OR,((RULE-SET,site_geolocation-!cn),(RULE-SET,ip_cloudflare)),Proxy' # 国外常见域名/ip  'cn' 参杂了 'geolocation-!cn'
-- 'OR,((RULE-SET,site_cn),(RULE-SET,ip_cn)),Direct' # 部分 cn 域名/ip
+- 'OR,((RULE-SET,site_cn),(RULE-SET,ip_cn)),Local' # 部分 cn 域名/ip
 - 'MATCH,Proxy' # 匹配所有请求, 无需条件
 
 #################### END ####################
