@@ -6,7 +6,7 @@ ipv6: true # IPv6 是否允许内核接受 IPv6 流量
 tcp-concurrent: true # TCP 并发 如果域名解析结果对应多个IP, 并发请求所有IP, 选择握手最快的IP进行通讯
 keep-alive-interval: 15 # 控制 Clash 发出 TCP Keep Alive 包的间隔, 单位 s, 减少移动设备耗电问题的临时措施
 unified-delay: true # 统一延迟, 会计算 RTT, 以消除连接握手等带来的不同类型节点的延迟差异
-global-client-fingerprint: 'chrome' # 全局客户端指纹 chrome/firefox/safari/iOS/android/edge/360/qq/random, 优先低于 proxy 内的 client-fingerprint, 目前支持开启 TLS 传输的 TCP/grpc/WS/HTTP, 支持协议有 VLESS/Vmess/Trojan
+global-client-fingerprint: 'edge' # 全局客户端指纹 chrome/firefox/safari/iOS/android/edge/360/qq/random, 优先低于 proxy 内的 client-fingerprint, 目前支持开启 TLS 传输的 TCP/grpc/WS/HTTP, 支持协议有 VLESS/Vmess/Trojan
 global-ua: 'Mozilla' # 全局 UA, 默认 clash.meta
 
 allow-lan: true # 允许其他设备经过 Clash 的代理端口访问互联网
@@ -55,8 +55,7 @@ dns:
   ipv6: true # false 将返回 AAAA 的空结果
   ipv6-timeout: 300 # 单位 ms, 内部双栈并发, 向上游查询 AAAA 时, 等待 AAAA 的时间, 默认 100
   prefer-h3: true # 开启 DoH 支持 HTTP/3, 将并发尝试
-  use-hosts: true # 是否查询配置中的 hosts, 默认 true
-  use-system-hosts: false # 是否查询系统 hosts, 默认 true
+  use-hosts: false # 是否查询配置中的 hosts, 默认 true
   respect-rules: false # dns 连接跟随 rule, 需配置 proxy-server-nameserver
   enhanced-mode: 'redir-host' # DNS 处理模式 fake-ip/redir-host(Meta 回滚了 Redir Host 部分代码, 仍然保留 Clash v1.70 以前的 Redir Host 模式的域名传递行为)/normal
   proxy-server-nameserver:
@@ -182,21 +181,21 @@ proxy-groups-anchor:
 # - filter_DE: &filter_DE {filter: '^(?=.*((?i)🇩🇪|德国|德|柏林|慕尼黑|(\b(DE|Germany)\b))).*$'}
 - filter_LU: &filter_LU { filter: '^(?=.*((?i)🇱🇺|卢森堡|(\b(LU|Luxembourg|BT|PT)\b))).*$' } # 种子专用
 
-- proxies_proxy: &proxies_proxy { proxies: [ Proxy, Local, Subscription¹, Subscription², Subscription³, Subscription⁴ ] }
-- proxies_direct: &proxies_direct { proxies: [ Local, Proxy, Subscription¹, Subscription², Subscription³, Subscription⁴ ] }
+- proxies_proxy: &proxies_proxy { expected-status: '204', proxies: [ Proxy, Local, Subscription¹, Subscription², Subscription³, Subscription⁴ ] }
+- proxies_direct: &proxies_direct { expected-status: '204', proxies: [ Local, Proxy, Subscription¹, Subscription², Subscription³, Subscription⁴ ] }
 
-- UT: &UT { type: url-test, expected-status: '204', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 30, tolerance: 10 }
+- UT: &UT { type: url-test, url: 'https://www.google.com/generate_204', expected-status: '204', max-failed-times: 2, interval: 30, tolerance: 10 }
 
-- FB: &FB { type: fallback, expected-status: '204', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 30 }
+- FB: &FB { type: fallback, url: 'https://www.google.com/generate_204', expected-status: '204', max-failed-times: 2, interval: 30 }
 
-- LB-SS: &LB-SS { type: load-balance, strategy: sticky-sessions, expected-status: '204', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 30 }
-- LB-RR: &LB-RR { type: load-balance, strategy: round-robin, expected-status: '204', url: 'https://www.google.com/generate_204', max-failed-times: 2, interval: 30 }
+- LB-SS: &LB-SS { type: load-balance, strategy: sticky-sessions, url: 'https://www.google.com/generate_204', expected-status: '204', max-failed-times: 2, interval: 30 }
+- LB-RR: &LB-RR { type: load-balance, strategy: round-robin, url: 'https://www.google.com/generate_204', expected-status: '204', max-failed-times: 2, interval: 30 }
 
 proxy-groups:
-# 策略组可以包含多个代理, 或多个远程代理集; 不包含任何代理的策略组, 会被当作为 DIRECT 策略处理; 如策略组代理来自远程代理集时, 则使用该来源的 health-check
+# 策略组可以包含多个代理, 或多个远程代理集; 不包含任何代理的策略组, 会被当作为 DIRECT 策略处理; 如策略组代理来自远程代理集时, 则使用 proxy-providers 的 health-check
 - { name: 'Proxy', type: select, <<: [ *UT ], proxies: [ Delay, Local, Subscription¹, Subscription², Subscription³, Subscription⁴, Magnification ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Final.png' }
-- { name: 'Local', type: select, proxies: [ Local Auto, 以太网 + WLAN, wlan0 + wlan1, data0 + wlan0, data0 + wlan1, data1 + wlan0, data1 + wlan1, data2 + wlan0, data2 + wlan1, data3 + wlan0, data3 + wlan1 ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China_Map.png' }
-- { name: 'LModel', type: select, <<: [ *proxies_proxy ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/ChatGPT.png' }
+- { name: 'Local', type: select, url: 'https://connect.rom.miui.com/generate_204', proxies: [ Local Auto, 以太网 + WLAN, wlan0 + wlan1, data0 + wlan0, data0 + wlan1, data1 + wlan0, data1 + wlan1, data2 + wlan0, data2 + wlan1, data3 + wlan0, data3 + wlan1 ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China_Map.png' }
+- { name: 'LModel', type: select, url: 'https://api.openai.com/cdn-cgi/trace', <<: [ *proxies_proxy ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/ChatGPT.png' }
 - { name: 'Google', type: select, <<: [ *proxies_direct ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png' }
 - { name: 'TGram', type: select, <<: [ *proxies_proxy ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Telegram.png' }
 - { name: 'Netflix', type: select, <<: [ *proxies_proxy ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Netflix.png' }
