@@ -1,11 +1,11 @@
 #################### START ####################
 mode: 'rule' # 运行模式 rule/global/direct, 暂不支持 script
-geodata-mode: false # GEOIP 数据模式 geoip 文件为 mmdb/dat 格式, true 为 dat 格式
 
 ipv6: true # IPv6 是否允许内核接受 IPv6 流量
 tcp-concurrent: true # TCP 并发 如果域名解析结果对应多个IP, 并发请求所有IP, 选择握手最快的IP进行通讯
 keep-alive-interval: 15 # 控制 Clash 发出 TCP Keep Alive 包的间隔, 单位 s, 减少移动设备耗电问题的临时措施
 unified-delay: true # 统一延迟, 会计算 RTT, 以消除连接握手等带来的不同类型节点的延迟差异
+
 global-client-fingerprint: 'edge' # 全局客户端指纹 chrome/firefox/safari/iOS/android/edge/360/qq/random, 优先低于 proxy 内的 client-fingerprint, 目前支持开启 TLS 传输的 TCP/grpc/WS/HTTP, 支持协议有 VLESS/Vmess/Trojan
 global-ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0' # 全局 UA, 默认 clash.meta
 
@@ -32,7 +32,7 @@ secret: 'clash' # API 的访问密钥
 # socks-port: 0 # socks4/4a/5 代理端口
 # redir-port: 0 # redirect 透明代理端口, 仅能代理 TCP 流量
 # tproxy-port: 0 # tproxy 透明代理端口, 可代理 TCP 与 UDP 流量
-# mixed-port: 0 # 混合端口 同时支持 HTTP(S) 和 SOCKS5 协议
+mixed-port: 7890 # 混合端口 同时支持 HTTP(S) 和 SOCKS5 协议
 
 tun:
   enable: true # 是否启用
@@ -160,7 +160,7 @@ proxy-providers:
 
 proxy-groups-anchor:
 # 锚点 如合并时有重复的项, 则不会去合并; 锚点名尽量不要含特殊字符
-- filter_EB: &filter_EB { filter: '^(?!.*((?i)回国|校园)).*$' } # 排除回国
+- filter_EB: &filter_EB { filter: '回国|校园' } # 排除回国
 - filter_0x: &filter_0x { filter: '^(?=.*((?i)0倍|(\b(0x|x0)\b))).*$' } # 0 倍节点
 - filter_0.1x: &filter_0.1x { filter: '^(?=.*((?i)0.1倍|(\b(0.1x|x0.1)\b))).*$' }
 - filter_0.5x: &filter_0.5x { filter: '^(?=.*((?i)0.5倍|(\b(0.5x|x0.5)\b))).*$' }
@@ -410,10 +410,6 @@ rule-providers:
     path: './rule_providers/ipcidr/cn'
     url: 'https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cn.mrs'
 
-  asn_45102:
-    <<: *rule_asn
-    path: './rule_providers/asn/45102'
-    url: 'https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/asn/AS45102.mrs'
   asn_45090:
     <<: *rule_asn
     path: './rule_providers/asn/45090'
@@ -430,7 +426,7 @@ rules:
 - 'DST-PORT,53,DNS Hijacking' # 劫持 DNS 到 Clash 内部 DNS 模块
 - 'RULE-SET,site_dns-blocklists,Advertise' # 需要拦截的广告 大部分情况可能出现误杀
 - 'AND,((NETWORK,udp),(NOT,((OR,(RULE-SET,site_cn),(RULE-SET,ip_cn))))),QUIC' # 国内以外的 QUIC
-- 'AND,((NETWORK,udp),(OR,(DOMAIN-KEYWORD,stun),(DOMAIN-KEYWORD,turn))),Privacy' # 是否禁用 stun/turn 协议的 udp 数据，禁用后可以有效解决 webrtc 的 ip 泄露
+- 'AND,((NETWORK,udp),(DOMAIN-REGEX,(?i).*(stun|turn).*)),Privacy' # 是否禁用 stun/turn 协议的 udp 数据，禁用后可以有效解决 webrtc 的 ip 泄露
 - 'AND,((DST-PORT,5228-5230),(RULE-SET,site_googlefcm)),Google' # Google FCM 直连确保 DNS 无污染/劫持
 - 'OR,((RULE-SET,site_httpdns),(RULE-SET,site_category-httpdns-cn),(DOMAIN-KEYWORD,httpdns)),REJECT-DROP' # 拦截 httpdns 服务, 以确保这些请求能够在 Clash 的 DNS 框架下工作
 - 'OR,((RULE-SET,site_private),(RULE-SET,ip_private,no-resolve)),Local' # 局域网..
