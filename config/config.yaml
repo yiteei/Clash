@@ -46,7 +46,11 @@ tun:
 
 hosts:
   # 支持单域名多 ip, 格式为数组; 支持域名通配符, 不使用通配符的域名优先级高于使用通配符的域名  Tip: 使用域名通配符的应该尽量用单引号包裹
-  'trpc.o3.*': [ 127.0.0.1 ] # 环境检测包（trpc.o3.*）拦截
+  'dns.alidns.com': [ '223.6.6.6', '2400:3200:baba::1' ]
+  'doh.pub': [ '120.53.53.53', '2402:4e00:1::' ]
+  'cloudflare-dns.com': [ '1.0.0.1', '2606:4700:4700::1001' ]
+  'dns-unfiltered.adguard.com': [ '94.140.14.141', '2a10:50c0::2:ff' ]
+  'trpc.o3.*': [ '127.0.0.1' ] # 环境检测包（trpc.o3.*）拦截
 
 dns:
   # DNS 服务器书写规范应带引号, 以防出现特殊字符
@@ -60,21 +64,21 @@ dns:
   enhanced-mode: 'redir-host' # DNS 处理模式 fake-ip/redir-host(Meta 回滚了 Redir Host 部分代码, 仍然保留 Clash v1.70 以前的 Redir Host 模式的域名传递行为)/normal
   proxy-server-nameserver:
   # 用于节点域名解析 如其他 DNS 需过代理查询/nameserver 为国外 DNS 时则配置该项以防出现鸡蛋问题
-  - 'https://223.6.6.6/dns-query' # Alibaba
-  - 'https://120.53.53.53/dns-query' # Tencent
+  - 'https://dns.alidns.com/dns-query' # Alibaba
+  - 'https://doh.pub/dns-query' # Tencent
   nameserver-policy:
     # 指定的解析服务, 没匹配到使用 nameserver/fallback 并发查询
     'rule-set:site_geolocation-!cn':
     # 'cn' 里参杂了 'geolocation-!cn', 强制国外 DNS 解析
-    - 'https://1.0.0.1/dns-query#Proxy' # Cloudflare
-    - 'https://94.140.14.141/dns-query#Proxy' # AdGuard
+    - 'https://cloudflare-dns.com/dns-query#Proxy' # Cloudflare
+    - 'https://dns-unfiltered.adguard.com/dns-query#Proxy' # AdGuard
     'rule-set:site_private,site_cn':
-    - 'https://223.6.6.6/dns-query'
-    - 'https://120.53.53.53/dns-query'
+    - 'https://dns.alidns.com/dns-query'
+    - 'https://doh.pub/dns-query'
   nameserver:
   # 默认域名解析, 如不配置 fallback/proxy-server-nameserver, 则都由 nameserver 解析
-  - 'https://1.0.0.1/dns-query#Proxy'
-  - 'https://94.140.14.141/dns-query#Proxy'
+  - 'https://cloudflare-dns.com/dns-query#Proxy'
+  - 'https://dns-unfiltered.adguard.com/dns-query#Proxy'
 
 sniffer:
   # Sniffer 域名嗅器 通过读取握手包内的域名字段, 将 IP 还原成域名
