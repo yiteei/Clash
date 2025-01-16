@@ -7,7 +7,7 @@ tcp-concurrent: true # TCP 并发 如果域名解析结果对应多个IP, 并发
 keep-alive-interval: 15 # 控制 Clash 发出 TCP Keep Alive 包的间隔, 单位 s, 减少移动设备耗电问题的临时措施
 unified-delay: true # 统一延迟, 会计算 RTT, 以消除连接握手等带来的不同类型节点的延迟差异
 global-client-fingerprint: 'edge' # 全局客户端指纹 chrome/firefox/safari/iOS/android/edge/360/qq/random, 优先低于 proxy 内的 client-fingerprint, 目前支持开启 TLS 传输的 TCP/grpc/WS/HTTP, 支持协议有 VLESS/Vmess/Trojan
-global-ua: 'Mozilla' # 全局 UA, 默认 clash.meta
+global-ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0' # 全局 UA, 默认 clash.meta
 
 allow-lan: true # 允许其他设备经过 Clash 的代理端口访问互联网
 bind-address: '*' # 绑定地址, 仅允许其他设备通过这个地址访问
@@ -124,7 +124,7 @@ proxy-providers:
   # 支持直接使用 V2rayN 等客户端的普通订阅; 一个合法的远程代理集必须包含 proxies 字段, 远程代理集为空时会以 DIRECT 替代
   Provider_1:
     type: http # 必须, provider 类型 http/file
-    url: 'http://127.0.0.1:38324/download/RioLU.443%20%E7%B2%BE%E9%9D%88%E5%AD%B8%E9%99%A2' # 此行单引号内填入你的订阅链接
+    url: 'http://127.0.0.1:38324/download/RioLU.443' # 此行单引号内填入你的订阅链接
     <<: [ *health_check, *header, *update, *filter_exclude_ad ]
     override:
       <<: *override
@@ -184,7 +184,7 @@ proxy-groups-anchor:
 - proxies_proxy: &proxies_proxy { expected-status: '204', proxies: [ Proxy, Local, Subscription¹, Subscription², Subscription³, Subscription⁴ ] }
 - proxies_direct: &proxies_direct { expected-status: '204', proxies: [ Local, Proxy, Subscription¹, Subscription², Subscription³, Subscription⁴ ] }
 
-- UT: &UT { type: url-test, url: 'https://www.google.com/generate_204', expected-status: '204', max-failed-times: 2, interval: 30, tolerance: 10 }
+- UT: &UT { type: url-test, url: 'https://www.google.com/generate_204', expected-status: '204', max-failed-times: 2, interval: 30, tolerance: 15 }
 
 - FB: &FB { type: fallback, url: 'https://www.google.com/generate_204', expected-status: '204', max-failed-times: 2, interval: 30 }
 
@@ -429,7 +429,7 @@ rules:
 # 分流规则可以直接引用代理或策略组, 但不能引用远程代理集; 对于每一条连接, 总是从上到下匹配规则; 需要复杂条件时, 可以用逻辑运算符去组合多个规则. 并且逻辑规则是可以相互嵌套的
 - 'DST-PORT,53,DNS Hijacking' # 劫持 DNS 到 Clash 内部 DNS 模块
 - 'RULE-SET,site_dns-blocklists,Advertise' # 需要拦截的广告 大部分情况可能出现误杀
-- 'AND,((NETWORK,udp),(DST-PORT,443),(NOT,((OR,(RULE-SET,site_cn),(RULE-SET,ip_cn))))),QUIC' # 国内以外的 QUIC
+- 'AND,((NETWORK,udp),(NOT,((OR,(RULE-SET,site_cn),(RULE-SET,ip_cn))))),QUIC' # 国内以外的 QUIC
 - 'AND,((NETWORK,udp),(OR,(DOMAIN-KEYWORD,stun),(DOMAIN-KEYWORD,turn))),Privacy' # 是否禁用 stun/turn 协议的 udp 数据，禁用后可以有效解决 webrtc 的 ip 泄露
 - 'AND,((DST-PORT,5228-5230),(RULE-SET,site_googlefcm)),Google' # Google FCM 直连确保 DNS 无污染/劫持
 - 'OR,((RULE-SET,site_httpdns),(RULE-SET,site_category-httpdns-cn),(DOMAIN-KEYWORD,httpdns)),REJECT-DROP' # 拦截 httpdns 服务, 以确保这些请求能够在 Clash 的 DNS 框架下工作
