@@ -113,7 +113,7 @@ proxy-providers-anchor:
 # 锚点 如合并时有重复的项, 则不会去合并; 锚点名尽量不要含特殊字符
 - health_check: &health_check { health-check: { enable: true, expected-status: '204', url: 'https://www.google.com/generate_204', interval: 60 } } # 延迟检测
 - header: &header { header: { User-Agent: [ 'clash-verge', 'ClashMetaForAndroid', 'flclash', 'clash.meta', 'meta', 'mihomo', 'stash', 'ClashforWindows', 'ClashForAndroid', 'clash' ] } } # UA
-- update: &update { proxy: Provider, interval: 43200 } # 更新 provider 使用的节点或策略组/更新 provider 的间隔, 单位 s  Tip: 设置的过于小可能被机场 ban
+- update: &update { proxy: 更新, interval: 43200 } # 更新 provider 使用的节点或策略组/更新 provider 的间隔, 单位 s  Tip: 设置的过于小可能被机场 ban
 - filter_exclude_ad: &filter_exclude_ad { filter: '^(?=.*(.))(?!.*((?i)群|邀请|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|导航|倒卖|防止|国内|地址|频道|无法|说明|使用|提示|特别|访问|支持|教程|关注|更新|作者|加入|(\b(USE|USED|TG|TOTAL|EXPIRE|EMAIL|Panel|Channel|Author)\b|(\d{4}-\d{2}-\d{2}|\d+G)))).*$' } # 引入筛选/排除, 使用筛选可能会在一定程度上增加CPU占用/转发延迟, 尤其是使用较为复杂正则的情况下
 - override: &override { udp: true } # 覆写
 
@@ -130,7 +130,7 @@ proxy-providers:
 
   Provider_2:
     type: http
-    url: 'http://127.0.0.1:38324/download/YkkCloud' # 此行单引号内填入你的订阅链接
+    url: 'http://127.0.0.1:38324/download/%E7%86%8A%E7%8C%AB' # 此行单引号内填入你的订阅链接
     <<: [ *health_check, *header, *update, *filter_exclude_ad ]
     override:
       <<: *override
@@ -148,7 +148,7 @@ proxy-providers:
 
   Provider_4:
     type: http
-    url: 'http://127.0.0.1:38324/download/Free%20Sub' # 此行单引号内填入你的订阅链接
+    url: 'http://127.0.0.1:38324/download/YkkCloud' # 此行单引号内填入你的订阅链接
     <<: [ *health_check, *header, *update, *filter_exclude_ad ]
     override:
       <<: *override
@@ -191,7 +191,7 @@ proxy-groups-anchor:
 
 proxy-groups:
 # 策略组可以包含多个代理, 或多个远程代理集; 不包含任何代理的策略组, 会被当作为 DIRECT 策略处理; 如策略组代理来自远程代理集时, 则使用 proxy-providers 的 health-check
-- { name: 'Proxy', type: select, proxies: [ Delay, Alive, Balance, Local, 香港, 台湾, 日本, 韩国, 狮城, 印度, 英国, 美国 ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Final.png' }
+- { name: 'Proxy', type: select, proxies: [ Url test, Fallback, Load balance, Local, 香港, 台湾, 日本, 韩国, 狮城, 印度, 英国, 美国 ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Final.png' }
 - { name: 'Local', type: select, url: 'https://connect.rom.miui.com/generate_204', proxies: [ Local Auto, 以太网 + WLAN, wlan0 + wlan1, data0 + wlan0, data0 + wlan1, data1 + wlan0, data1 + wlan1, data2 + wlan0, data2 + wlan1, data3 + wlan0, data3 + wlan1 ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China_Map.png' }
 - { name: '香港', <<: [ *FB, *filter_HK ], include-all-providers: true, icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Hong_Kong.png' }
 - { name: '台湾', <<: [ *FB, *filter_TW ], include-all-providers: true, icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Taiwan.png' }
@@ -216,11 +216,11 @@ proxy-groups:
 - { name: 'Emby', type: select, <<: [ *proxies_direct ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Emby.png' }
 # - { name: 'Netflix', type: select, <<: [ *proxies_proxy ], icon: 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Netflix.png' }
 
-- { name: 'Delay', <<: [ *UT, *exclude_EB ], include-all-providers: true, hidden: true }
+- { name: 'Url test', <<: [ *UT, *exclude_EB ], include-all-providers: true, hidden: true }
 
-- { name: 'Alive', <<: [ *FB, *exclude_EB ], include-all-providers: true, hidden: true }
+- { name: 'Fallback', <<: [ *FB, *exclude_EB ], include-all-providers: true, hidden: true }
 
-- { name: 'Balance', <<: [ *LB-RR, *exclude_EB ], include-all-providers: true, hidden: true }
+- { name: 'Load balance', <<: [ *LB-RR, *exclude_EB ], include-all-providers: true, hidden: true }
 
 - { name: '以太网 + WLAN', <<: *LB-RR, proxies: [ 以太网, WLAN ], hidden: true }
 - { name: 'wlan0 + wlan1', <<: *LB-RR, proxies: [ wlan0, wlan1 ], hidden: true }
@@ -235,10 +235,10 @@ proxy-groups:
 
 rule-providers-anchor:
   # 锚点 如合并时有重复的项, 则不会去合并; 锚点名尽量不要含特殊字符
-  rule_domain: &rule_domain { type: http, behavior: domain, format: mrs, proxy: Provider }
-  rule_ipcidr: &rule_ipcidr { type: http, behavior: ipcidr, format: mrs, proxy: Provider }
-  rule_asn: &rule_asn { type: http, behavior: ipcidr, format: mrs, proxy: Provider }
-  rule_classical: &rule_classical { type: http, behavior: classical, format: yaml, proxy: Provider }
+  rule_domain: &rule_domain { type: http, behavior: domain, format: mrs, proxy: 更新 }
+  rule_ipcidr: &rule_ipcidr { type: http, behavior: ipcidr, format: mrs, proxy: 更新 }
+  rule_asn: &rule_asn { type: http, behavior: ipcidr, format: mrs, proxy: 更新 }
+  rule_classical: &rule_classical { type: http, behavior: classical, format: yaml, proxy: 更新 }
 
 rule-providers:
   # 利用规则集合, 可以在较低资源占用情况下引用大量规则; domain/ipcidr 类规则集, 比 classical 类规则集匹配更高效
